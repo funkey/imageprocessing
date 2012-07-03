@@ -1,12 +1,11 @@
 #ifndef PIPELINE_IMAGE_WRITER_H__
 #define PIPELINE_IMAGE_WRITER_H__
 
-#include <pipeline/signals/Update.h>
-#include <pipeline/ProcessNode.h>
+#include <pipeline/all.h>
 #include <signals/Slot.h>
 #include <imageprocessing/Image.h>
 
-class ImageWriter : public pipeline::ProcessNode {
+class ImageWriter : public pipeline::SimpleProcessNode {
 
 public:
 
@@ -15,15 +14,14 @@ public:
 	/**
 	 * Initiate writing of the image that is connected to this writer.
 	 */
-	void write();
+	void write(std::string filename = "");
 
 private:
 
+	void updateOutputs() {};
+
 	// the input image
 	pipeline::Input<Image> _image;
-
-	// update signal slot
-	signals::Slot<const pipeline::Update> _update;
 
 	// the name of the file to write to
 	std::string _filename;
