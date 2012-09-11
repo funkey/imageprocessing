@@ -26,8 +26,8 @@ public:
 
 	using array_type::operator=;
 
-	array_type::difference_type_1 width() { return size(0); }
-	array_type::difference_type_1 height() { return size(1); }
+	array_type::difference_type_1 width() const { return size(0); }
+	array_type::difference_type_1 height() const { return size(1); }
 
 private:
 
