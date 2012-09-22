@@ -5,7 +5,7 @@
 #include <signals/Slot.h>
 #include <imageprocessing/Image.h>
 
-class ImageWriter : public pipeline::SimpleProcessNode {
+class ImageWriter : public pipeline::SimpleProcessNode<> {
 
 public:
 

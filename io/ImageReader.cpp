@@ -6,35 +6,17 @@
 logger::LogChannel imagereaderlog("imagereaderlog", "[ImageReader] ");
 
 ImageReader::ImageReader(std::string filename) :
-	_filename(filename),
-	_dirty(true) {
+	_filename(filename) {
 
 	// let others know about our output
 	registerOutput(_image, "image");
-
-	_image.registerForwardSlot(_updated);
-
-	// receive signals from this output
-	_image.registerForwardCallback(&ImageReader::onUpdate, this);
 }
 
 void
-ImageReader::onUpdate(const pipeline::Update& update) {
+ImageReader::updateOutputs() {
 
-	LOG_DEBUG(imagereaderlog) << "got an update notification" << std::endl;
-
-	if (_dirty) {
-
-		LOG_DEBUG(imagereaderlog) << "need to (re)load image..." << std::endl;
-		readImage();
-
-		LOG_ALL(imagereaderlog) << "sending signal Updated" << std::endl;
-		_updated();
-
-	} else {
-
-		LOG_DEBUG(imagereaderlog) << "nothing changed -- nothing to do" << std::endl;
-	}
+	LOG_DEBUG(imagereaderlog) << "need to (re)load image..." << std::endl;
+	readImage();
 }
 
 void
@@ -62,6 +44,4 @@ ImageReader::readImage() {
 			vigra::srcImageRange(*_image),
 			vigra::destImage(*_image),
 			vigra::linearIntensityTransform<float>(1.0/255.0));
-
-	_dirty = false;
 }
