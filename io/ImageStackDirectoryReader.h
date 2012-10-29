@@ -6,6 +6,8 @@
 #include <boost/filesystem.hpp>
 
 #include <pipeline/all.h>
+#include <imageprocessing/Image.h>
+#include <imageprocessing/ImageStack.h>
 
 // forward declarations
 class Image;
