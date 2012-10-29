@@ -1,6 +1,8 @@
 #include <util/Logger.h>
 #include "ImageStackHdf5Reader.h"
 
+#ifdef HAVE_HDF5
+
 logger::LogChannel imagestackhdf5readerlog("imagestackhdf5readerlog", "[ImageStackHdf5Reader] ");
 
 ImageStackHdf5Reader::ImageStackHdf5Reader(
@@ -58,3 +60,5 @@ ImageStackHdf5Reader::readImages() {
 
 	LOG_DEBUG(imagestackhdf5readerlog) << "read " << sections << " sections" << std::endl;
 }
+
+#endif // HAVE_HDF5

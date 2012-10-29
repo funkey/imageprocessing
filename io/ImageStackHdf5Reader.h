@@ -1,6 +1,10 @@
 #ifndef IMAGEPROCESSING_IO_IMAGE_STACK_HDF5_READER_H__
 #define IMAGEPROCESSING_IO_IMAGE_STACK_HDF5_READER_H__
 
+#include <config.h>
+
+#ifdef HAVE_HDF5
+
 #include <util/hdf5.h>
 
 #include <pipeline/all.h>
@@ -35,3 +39,4 @@ private:
 
 #endif // IMAGEPROCESSING_IO_IMAGE_STACK_HDF5_READER_H__
 
+#endif // HAVE_HDF5
