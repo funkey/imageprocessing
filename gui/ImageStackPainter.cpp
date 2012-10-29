@@ -17,7 +17,8 @@ ImageStackPainter::setImageStack(boost::shared_ptr<ImageStack> stack) {
 
 	_stack = stack;
 
-	setCurrentSection(_section);
+	if (_section >= _stack->size())
+		setCurrentSection(0);
 }
 
 void

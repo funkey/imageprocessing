@@ -5,8 +5,7 @@ static logger::LogChannel imagestackviewlog("imagestackviewlog", "[ImageStackVie
 
 ImageStackView::ImageStackView(unsigned int numImages) :
 	_painter(boost::make_shared<ImageStackPainter>(numImages)),
-	_section(0),
-	_currentImage(boost::make_shared<Image>()) {
+	_section(0) {
 
 	registerInput(_stack, "imagestack");
 	registerOutput(_painter, "painter");
@@ -23,6 +22,7 @@ ImageStackView::updateOutputs() {
 	util::rect<double> oldSize = _painter->getSize();
 
 	_painter->setImageStack(_stack);
+	_painter->setCurrentSection(_section);
 
 	util::rect<double> newSize = _painter->getSize();
 
@@ -39,8 +39,7 @@ ImageStackView::updateOutputs() {
 		_sizeChanged();
 	}
 
-	if (_stack->size() > _section)
-		*_currentImage = *(*_stack)[_section];
+	_currentImage = (*_stack)[_section];
 }
 
 void
@@ -54,8 +53,6 @@ ImageStackView::onKeyDown(gui::KeyDown& signal) {
 
 		LOG_ALL(imagestackviewlog) << "setting current section to " << _section << std::endl;
 
-		_painter->setCurrentSection(_section);
-
 		setDirty(_painter);
 		setDirty(_currentImage);
 	}
@@ -65,8 +62,6 @@ ImageStackView::onKeyDown(gui::KeyDown& signal) {
 		_section = std::min((int)_stack->size() - 1, _section + 1);
 
 		LOG_ALL(imagestackviewlog) << "setting current section to " << _section << std::endl;
-
-		_painter->setCurrentSection(_section);
 
 		setDirty(_painter);
 		setDirty(_currentImage);
