@@ -40,7 +40,11 @@ public:
 
 	boost::shared_ptr<Image> operator[](unsigned int i) { return _sections[i]; }
 
-	unsigned int size() { return _sections.size(); }
+	unsigned int size() const { return _sections.size(); }
+
+	unsigned int width() const { return (size() > 0 ? _sections[0]->width() : 0); }
+
+	unsigned int height() const { return (size() > 0 ? _sections[0]->height() : 0); }
 
 private:
 
