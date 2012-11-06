@@ -39,7 +39,14 @@ ImageStackView::updateOutputs() {
 		_sizeChanged();
 	}
 
-	_currentImage = (*_stack)[_section];
+	// prepare current image data
+	_currentImageData.reshape(vigra::MultiArray<2, float>::size_type(_stack->width(), _stack->height()));
+
+	// copy current image data
+	_currentImageData = *(*_stack)[_section];
+
+	// set content of output
+	*_currentImage = _currentImageData;
 }
 
 void

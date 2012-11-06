@@ -28,6 +28,9 @@ private:
 
 	// the section to show
 	int _section;
+
+	// copy of the currently visible image
+	vigra::MultiArray<2, float> _currentImageData;
 };
 
 #endif // IMAGEPROCESSING_GUI_IMAGE_STACK_VIEW_H__
