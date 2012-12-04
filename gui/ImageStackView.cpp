@@ -39,6 +39,9 @@ ImageStackView::updateOutputs() {
 		_sizeChanged();
 	}
 
+	if (_stack->size() == 0)
+		return;
+
 	// prepare current image data
 	_currentImageData.reshape(vigra::MultiArray<2, float>::size_type(_stack->width(), _stack->height()));
 
