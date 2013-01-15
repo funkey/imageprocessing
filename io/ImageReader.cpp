@@ -15,7 +15,6 @@ ImageReader::ImageReader(std::string filename) :
 void
 ImageReader::updateOutputs() {
 
-	LOG_DEBUG(imagereaderlog) << "need to (re)load image..." << std::endl;
 	readImage();
 }
 
