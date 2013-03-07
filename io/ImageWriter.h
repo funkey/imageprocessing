@@ -9,7 +9,7 @@ class ImageWriter : public pipeline::SimpleProcessNode<> {
 
 public:
 
-	ImageWriter(std::string filename);
+	ImageWriter(std::string filename = "");
 
 	/**
 	 * Initiate writing of the image that is connected to this writer.
