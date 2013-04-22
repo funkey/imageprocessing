@@ -53,22 +53,25 @@ OrientationFilter::updateOutputs() {
 float
 OrientationFilter::DiscretizeOrientation::operator()(float gradX, float gradY) const {
 
-	float mag = sqrt(gradX*gradX + gradY*gradY);
+	float orientationX = -gradY;
+	float orientationY = gradX;
 
-	float alpha = std::asin(std::abs(gradX)/mag);
+	float mag = sqrt(orientationX*orientationX + orientationY*orientationY);
+
+	float alpha = std::asin(std::abs(orientationX)/mag);
 
 	// pointing upwards
-	if (gradY < 0) {
+	if (orientationY < 0) {
 
 		// pointing left
-		if (gradX < 0)
+		if (orientationX < 0)
 			alpha = 2*M_PI - alpha;
 
 	// pointing downwards
 	} else {
 
 		// pointing right
-		if (gradX >= 0) {
+		if (orientationX >= 0) {
 
 			alpha = M_PI - alpha;
 
@@ -90,5 +93,5 @@ OrientationFilter::DiscretizeOrientation::operator()(float gradX, float gradY) c
 
 	int orientation = static_cast<int>(alpha/segmentAngle) % _numOrientations;
 
-	return 1.0/_numOrientations*orientation;
+	return 1.0/(_numOrientations + 1)*(1.0 + orientation);
 }

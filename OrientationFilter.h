@@ -4,6 +4,13 @@
 #include <pipeline/all.h>
 #include "Image.h"
 
+/**
+ * Performs a Gaussian smoothing to find the principal orientation for every 
+ * pixel. The orientations are discretized (numOrientations in constructor) and 
+ * given back in an orientation map, where the value of orientation i is the 
+ * highest value of the i-th equally sized interval in the range [0, 1].  
+ * Orientation 0 is vertical, subsequent orientations follow clock-wise.
+ */
 class OrientationFilter : public pipeline::SimpleProcessNode<> {
 
 public:
