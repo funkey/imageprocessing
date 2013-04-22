@@ -59,7 +59,11 @@ ImageStackDirectoryWriter::write(std::string basename) {
 
 	foreach (boost::shared_ptr<Image> image, *_stack) {
 
-		std::string filename = _directory + "/" + _basename + basename + boost::lexical_cast<std::string>(i) + ".png";
+		std::stringstream number;
+		number << std::setw(8) << std::setfill('0');
+		number << i;
+
+		std::string filename = _directory + "/" + _basename + basename + number.str() + ".png";
 		vigra::exportImage(vigra::srcImageRange(*image), vigra::ImageExportInfo(filename.c_str()));
 
 		i++;
