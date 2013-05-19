@@ -38,9 +38,23 @@ ImageReader::readImage() {
 	// read image
 	importImage(info, vigra::destImage(*_image));
 
+	if (strcmp(info.getPixelType(), "FLOAT") == 0)
+		return;
+
 	// scale image to [0..1]
+
+	float factor;
+	if (strcmp(info.getPixelType(), "UINT8") == 0)
+		factor = 255.0;
+	else if (strcmp(info.getPixelType(), "INT16") == 0)
+		factor = 511.0;
+	else {
+
+		LOG_ERROR(imagereaderlog) << _filename << " has a unsupported pixel format: " << info.getPixelType() << std::endl;
+	}
+
 	vigra::transformImage(
 			vigra::srcImageRange(*_image),
 			vigra::destImage(*_image),
-			vigra::linearIntensityTransform<float>(1.0/255.0));
+			vigra::linearIntensityTransform<float>(1.0/factor));
 }
