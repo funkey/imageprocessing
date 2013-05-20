@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include <vigra/impex.hxx>
 
 #include <util/Logger.h>
@@ -20,6 +22,28 @@ ImageReader::updateOutputs() {
 
 void
 ImageReader::readImage() {
+
+	if (_filename.find(".feat") == _filename.size() - 5) {
+
+		LOG_DEBUG(imagereaderlog) << "found simple image file, using own importer" << std::endl;
+
+		uint32_t width, height;
+
+		std::ifstream file(_filename.c_str(), std::fstream::in | std::fstream::binary);
+
+		file >> width >> height;
+
+		LOG_DEBUG(imagereaderlog) << "reading image of size " << width << "x" << " height" << std::endl;
+
+		_imageData.reshape(vigra::MultiArray<2, float>::size_type(width, height));
+
+		for (int y = 0; y < height; y++)
+			for (int x = 0; x < width; x++)
+				file >> _imageData[x, y];
+
+		*_image = _imageData;
+		return;
+	}
 
 	// get information about the image to read
 	vigra::ImageImportInfo info(_filename.c_str());
