@@ -29,19 +29,28 @@ ImageReader::readImage() {
 
 		uint32_t width, height;
 
-		std::ifstream file(_filename.c_str(), std::fstream::in | std::fstream::binary);
+		FILE* f = fopen(_filename.c_str(),"r");
+		fread(&width,sizeof(uint32_t),1,f);
+		fread(&height,sizeof(uint32_t),1,f);
 
-		file >> width >> height;
-
-		LOG_DEBUG(imagereaderlog) << "reading image of size " << width << "x" << " height" << std::endl;
+		LOG_DEBUG(imagereaderlog) << "reading image of size " << width << "x" << height << std::endl;
 
 		_imageData.reshape(vigra::MultiArray<2, float>::size_type(width, height));
 
-		for (int y = 0; y < height; y++)
-			for (int x = 0; x < width; x++)
-				file >> _imageData[x, y];
-
 		*_image = _imageData;
+
+		float value;
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				fread(&value,sizeof(float),1,f);
+				(*_image)(x, y) = value;
+			}
+		}
+
+		fclose(f);
+		
+		LOG_DEBUG(imagereaderlog) << "Read data  (0,0): " << _imageData[0,0] << std::endl;
+		LOG_DEBUG(imagereaderlog) << "Read image (0,0): " << (*_image)(0,0) << std::endl;
 		return;
 	}
 
