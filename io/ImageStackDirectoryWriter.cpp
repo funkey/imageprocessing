@@ -63,8 +63,8 @@ ImageStackDirectoryWriter::write(std::string basename) {
 		number << std::setw(8) << std::setfill('0');
 		number << i;
 
-		std::string filename = _directory + "/" + _basename + basename + number.str() + ".tiff";
-		vigra::exportImage(vigra::srcImageRange(*image), vigra::ImageExportInfo(filename.c_str()).setPixelType("FLOAT"));
+		std::string filename = _directory + "/" + _basename + basename + number.str() + ".png";
+		vigra::exportImage(vigra::srcImageRange(*image), vigra::ImageExportInfo(filename.c_str()));
 
 		i++;
 	}
