@@ -3,17 +3,26 @@
 
 static logger::LogChannel imagestackviewlog("imagestackviewlog", "[ImageStackView] ");
 
-ImageStackView::ImageStackView(unsigned int numImages) :
-	_painter(boost::make_shared<ImageStackPainter>(numImages)),
+ImageStackView::ImageStackView(unsigned int numImages, bool showColored) :
+	_painter(boost::make_shared<ImageStackPainter>(numImages, showColored)),
 	_section(0) {
 
 	registerInput(_stack, "imagestack");
 	registerOutput(_painter, "painter");
 	registerOutput(_currentImage, "current image");
+	registerOutput(_clickX, "click x");
+	registerOutput(_clickY, "click y");
 
 	_painter.registerForwardSlot(_sizeChanged);
 	_painter.registerForwardSlot(_contentChanged);
 	_painter.registerForwardCallback(&ImageStackView::onKeyDown, this);
+	_painter.registerForwardCallback(&ImageStackView::onButtonDown, this);
+}
+
+void
+ImageStackView::setColors(std::vector<float> reds, std::vector<float> greens, std::vector<float> blues) {
+
+	_painter->setColors(reds, greens, blues);
 }
 
 void
@@ -50,6 +59,10 @@ ImageStackView::updateOutputs() {
 
 	// set content of output
 	*_currentImage = _currentImageData;
+
+	// set last known mouse down position
+	*_clickX = _mouseDownX;
+	*_clickY = _mouseDownY;
 }
 
 void
@@ -78,3 +91,19 @@ ImageStackView::onKeyDown(gui::KeyDown& signal) {
 	}
 }
 
+void
+ImageStackView::onButtonDown(gui::MouseDown& signal) {
+
+	LOG_ALL(imagestackviewlog) << "got a mouse down event" << std::endl;
+
+	if (signal.button == gui::buttons::Left && signal.modifiers == 0) {
+
+		_mouseDownX = signal.position.x;
+		_mouseDownY = signal.position.y;
+
+		LOG_ALL(imagestackviewlog) << "setting click position to (" << _mouseDownX << ", " << _mouseDownY << ")" << std::endl;
+
+		setDirty(_clickX);
+		setDirty(_clickY);
+	}
+}

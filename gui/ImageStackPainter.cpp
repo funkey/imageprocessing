@@ -2,12 +2,14 @@
 
 static logger::LogChannel imagestackpainterlog("imagestackpainterlog", "[ImageStackPainter] ");
 
-ImageStackPainter::ImageStackPainter(unsigned int numImages) :
+ImageStackPainter::ImageStackPainter(unsigned int numImages, bool showColored) :
 	_numImages(numImages),
-	_section(0) {
+	_section(0),
+	_showColored(showColored) {
 
-	for (int i = 0; i < _numImages; i++)
-		_imagePainters.push_back(boost::make_shared<gui::ImagePainter<Image> >());
+	if (!_showColored)
+		for (int i = 0; i < _numImages; i++)
+			_imagePainters.push_back(boost::make_shared<gui::ImagePainter<Image> >());
 }
 
 void
@@ -19,10 +21,34 @@ ImageStackPainter::setImageStack(boost::shared_ptr<ImageStack> stack) {
 
 	if (_stack && _section >= _stack->size())
 		setCurrentSection(0);
+
+	if (_showColored) {
+
+		_imagePainters.clear();
+
+		for (int i = 0; i < _stack->size(); i++) {
+
+			boost::shared_ptr<gui::ImagePainter<Image> > painter = boost::make_shared<gui::ImagePainter<Image> >();
+			painter->setImage((*_stack)[i]);
+			painter->setColor(
+				(i < _reds.size()   ? _reds[i]   : static_cast<float>(rand())/RAND_MAX),
+				(i < _greens.size() ? _greens[i] : static_cast<float>(rand())/RAND_MAX),
+				(i < _blues.size()  ? _blues[i]  : static_cast<float>(rand())/RAND_MAX));
+			painter->setTransparent(true);
+			painter->update();
+
+			_imagePainters.push_back(painter);
+
+			setSize(painter->getSize());
+		}
+	}
 }
 
 void
 ImageStackPainter::setCurrentSection(unsigned int section) {
+
+	if (_showColored)
+		return;
 
 	if (!_stack || _stack->size() == 0 || _imagePainters.size() == 0)
 		return;
@@ -58,14 +84,38 @@ ImageStackPainter::draw(
 
 	LOG_ALL(imagestackpainterlog) << "redrawing section " << _section << std::endl;
 
-	for (int i = 0; i < _numImages; i++) {
+	if (_showColored) {
 
-		int offset = i - _numImages/2;
+		for (int i = 0; i < _stack->size(); i++) {
 
-		glTranslated(0, -offset*_imageHeight, 0);
+			_imagePainters[i]->draw(roi, resolution);
+		}
 
-		_imagePainters[i]->draw(roi - util::point<double>(static_cast<double>(0), -offset*_imageHeight), resolution);
+	} else {
 
-		glTranslated(0,  offset*_imageHeight, 0);
+		for (int i = 0; i < _numImages; i++) {
+
+			int offset = i - _numImages/2;
+
+			glTranslated(0, -offset*_imageHeight, 0);
+
+			_imagePainters[i]->draw(roi - util::point<double>(static_cast<double>(0), -offset*_imageHeight), resolution);
+
+			glTranslated(0,  offset*_imageHeight, 0);
+		}
 	}
+}
+
+void
+ImageStackPainter::showColored(bool showColored) {
+
+	_showColored = showColored;
+}
+
+void
+ImageStackPainter::setColors(std::vector<float> reds, std::vector<float> greens, std::vector<float> blues) {
+
+	_reds   = reds;
+	_greens = greens;
+	_blues  = blues;
 }

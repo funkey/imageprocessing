@@ -9,7 +9,7 @@ class ImageStackPainter : public gui::Painter {
 
 public:
 
-	ImageStackPainter(unsigned int numImages = 1);
+	ImageStackPainter(unsigned int numImages = 1, bool showColored = true);
 
 	void setImageStack(boost::shared_ptr<ImageStack> stack);
 
@@ -21,6 +21,18 @@ public:
 	virtual void draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution);
+
+	/**
+	 * Enable or disable color mode. In color mode, all images are shown
+	 * transparently with a different color on top of each other.
+	 */
+	void showColored(bool showColored);
+
+	/**
+	 * Set the first k numbers to color images in the stack. If there are
+	 * more images in the stack, they will be colored randomly.
+	 */
+	void setColors(std::vector<float> reds, std::vector<float> greens, std::vector<float> blues);
 
 private:
 
@@ -38,6 +50,14 @@ private:
 
 	// the height of the images to show
 	double _imageHeight;
+
+	// show the images of the stack in a colored overlay
+	bool _showColored;
+
+	// the colors for the first k images
+	std::vector<float> _reds;
+	std::vector<float> _greens;
+	std::vector<float> _blues;
 };
 
 #endif // IMAGEPROCESSING_GUI_IMAGE_STACK_PAINTER_H__
