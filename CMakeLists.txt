@@ -1,6 +1,7 @@
 # find all files constituting this library
 file(GLOB imageprocessingfiles
   *.cpp
+  mser/*.cpp
   gui/*.cpp
   io/*.cpp)
 
