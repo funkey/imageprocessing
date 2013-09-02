@@ -4,7 +4,9 @@
 #include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
 #include <gui/Keys.h>
-#include <gui/Signals.h>
+#include <gui/GuiSignals.h>
+#include <gui/KeySignals.h>
+#include <gui/MouseSignals.h>
 #include "ImageStackPainter.h"
 
 class ImageStackView : public pipeline::SimpleProcessNode<> {

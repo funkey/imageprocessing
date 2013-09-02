@@ -94,7 +94,7 @@ public:
 	/**
 	 * Overwritten from painter.
 	 */
-	virtual void draw(
+	virtual bool draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution);
 
@@ -232,7 +232,7 @@ ImagePainter<Image, Pointer>::setImage(pointer_type image, boost::shared_mutex* 
 }
 
 template <typename Image, typename Pointer>
-void
+bool
 ImagePainter<Image, Pointer>::draw(
 	const util::rect<double>&  roi,
 	const util::point<double>& resolution) {
@@ -241,14 +241,14 @@ ImagePainter<Image, Pointer>::draw(
 	if (!_image) {
 
 		LOG_ALL(imagepainterlog) << "have no image, yet" << std::endl;
-		return;
+		return false;
 	}
 
 	// wait for content
 	if (_image->width() == 0 || _image->height() == 0) {
 
 		LOG_ALL(imagepainterlog) << "image has zero size, yet" << std::endl;
-		return;
+		return false;
 	}
 
 	if (_hasReloadThread) {
@@ -268,7 +268,7 @@ ImagePainter<Image, Pointer>::draw(
 			glVertex2d(getSize().minX, getSize().maxY); 
 			glEnd();
 
-			return;
+			return false;
 		}
 	}
 
@@ -330,6 +330,8 @@ ImagePainter<Image, Pointer>::draw(
 			}
 		}
 	}
+
+	return false;
 }
 
 template <typename Image, typename Pointer>

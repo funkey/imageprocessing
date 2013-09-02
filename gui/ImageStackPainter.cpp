@@ -77,7 +77,7 @@ ImageStackPainter::setCurrentSection(unsigned int section) {
 	LOG_DEBUG(imagestackpainterlog) << "current section set to " << _section << std::endl;
 }
 
-void
+bool
 ImageStackPainter::draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
@@ -104,6 +104,8 @@ ImageStackPainter::draw(
 			glTranslated(0,  offset*_imageHeight, 0);
 		}
 	}
+
+	return false;
 }
 
 void

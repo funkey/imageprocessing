@@ -1,7 +1,7 @@
 #ifndef IMAGEPROCESSING_GRAPH_CUT_H__
 #define IMAGEPROCESSING_GRAPH_CUT_H__
 
-#include <external/dgc/graph.h>
+#include <imageprocessing/external/dgc/graph.h>
 
 #include <imageprocessing/Image.h>
 #include <pipeline/all.h>

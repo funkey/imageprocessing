@@ -2,8 +2,8 @@
 #define IMAGEPROCESSING_GUI_IMAGE_STACK_PAINTER_H__
 
 #include <gui/Painter.h>
-#include <gui/ImagePainter.h>
 #include <imageprocessing/ImageStack.h>
+#include <imageprocessing/gui/ImagePainter.h>
 
 class ImageStackPainter : public gui::Painter {
 
@@ -18,7 +18,7 @@ public:
 	/**
 	 * Overwritten from painter.
 	 */
-	virtual void draw(
+	virtual bool draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution);
 
