@@ -434,7 +434,7 @@ ImagePainter<Image, Pointer>::reloadTexture() {
 
 	} else {
 
-		_imageTexture->loadData(_image->begin());
+		_imageTexture->loadData(&(*_image->begin()));
 	}
 
 	// set reported size
@@ -468,7 +468,7 @@ ImagePainter<Image, Pointer>::loadNormalized(const boost::true_type&) {
 	}
 
 	// scale and shift to [0..1]
-	_imageTexture->loadData(_image->begin(), 1.0f/(max - min), -min/(max - min));
+	_imageTexture->loadData(&(*_image->begin()), 1.0f/(max - min), -min/(max - min));
 }
 
 template <typename Image, typename Pointer>
@@ -476,7 +476,7 @@ void
 ImagePainter<Image, Pointer>::loadNormalized(const boost::false_type& arithmetic) {
 
 	// for non-intensity images we leave it like that for the moment...
-	_imageTexture->loadData(_image->begin());
+	_imageTexture->loadData(&(*_image->begin()));
 }
 
 template <typename Image, typename Pointer>
