@@ -1,8 +1,11 @@
 #ifndef IMAGEPROCESSING_IO_COMPONENT_TREE_HDF5_WRITER_H__
 #define IMAGEPROCESSING_IO_COMPONENT_TREE_HDF5_WRITER_H__
 
+#include <config.h>
+#ifdef HAVE_HDF5
+
 #include <pipeline/all.h>
-#include <util/hdf5.h>
+#include <util/hdf5_helpers.h>
 #include <imageprocessing/ComponentTree.h>
 
 class ComponentTreeHdf5Writer : public pipeline::SimpleProcessNode<> {
@@ -56,6 +59,8 @@ private:
 
 	H5::Group _group;
 };
+
+#endif // HAVE_HDF5
 
 #endif // IMAGEPROCESSING_IO_COMPONENT_TREE_HDF5_WRITER_H__
 

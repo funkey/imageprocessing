@@ -1,3 +1,6 @@
+#include <config.h>
+#ifdef HAVE_HDF5
+
 #include <boost/lexical_cast.hpp>
 
 #include "ComponentTreeHdf5Writer.h"
@@ -114,3 +117,5 @@ ComponentTreeHdf5Writer::WriteVisitor::save(H5::Group& group) {
 		hdf5::write(group, "pixel_list_" + boost::lexical_cast<std::string>(id), *list, dims, pixelType);
 	}
 }
+
+#endif // HAVE_HDF5
