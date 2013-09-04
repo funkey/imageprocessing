@@ -5,7 +5,7 @@
 
 #ifdef HAVE_HDF5
 
-#include <util/hdf5.h>
+#include <util/hdf5_helpers.h>
 
 #include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
