@@ -162,8 +162,6 @@ Mser::process(bool darkToBright) {
 	// get value of first pixel to process
 	_curValue = (darkToBright ? _values[_curIndex] : 255 - _values[_curIndex]);
 
-	LOG_ALL(mserlog) << "initial value at " << _curPosition << " is " << (int)_curValue << std::endl;
-
 	// start a first region
 	_currentRegion++;
 	_regions[_currentRegion] = mser::Region(_curValue, &_pixelList, _image, &(*_parameters));
@@ -447,8 +445,6 @@ Mser::createComponentTree() {
 boost::shared_ptr<ComponentTree::Node>
 Mser::createSubComponentTree(boost::shared_ptr<std::vector<util::point<unsigned int> > > sharedPixelList, unsigned int& currentPixel, int mserId) {
 
-	LOG_ALL(mserlog) << "exploring region " << mserId << std::endl;
-
 	// get the old pixel list indices
 	int head = _msers[mserId].getHeadIndex();
 	int tail = _msers[mserId].getTailIndex();
@@ -486,8 +482,6 @@ Mser::createSubComponentTree(boost::shared_ptr<std::vector<util::point<unsigned 
 		// we found a pixel that exclusively belongs to us
 		(*sharedPixelList)[currentPixel] = util::point<unsigned int>(i%_image->width(), i/_image->width());
 
-		LOG_ALL(mserlog) << "added pixel" << (*sharedPixelList)[currentPixel] << std::endl;
-
 		currentPixel++;
 
 		if (i == tail)
@@ -507,8 +501,6 @@ Mser::createSubComponentTree(boost::shared_ptr<std::vector<util::point<unsigned 
 	// add the children
 	foreach (boost::shared_ptr<ComponentTree::Node> childNode, children)
 		componentNode->addChild(childNode);
-
-	LOG_ALL(mserlog) << "finished region " << mserId << " with " << (end - begin) << " pixels" << std::endl;
 
 	return componentNode;
 }
