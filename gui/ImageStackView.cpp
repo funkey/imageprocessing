@@ -10,6 +10,7 @@ ImageStackView::ImageStackView(unsigned int numImages, bool showColored) :
 	registerInput(_stack, "imagestack");
 	registerOutput(_painter, "painter");
 	registerOutput(_currentImage, "current image");
+	registerOutput(_section, "section");
 	registerOutput(_clickX, "click x");
 	registerOutput(_clickY, "click y");
 
@@ -31,7 +32,7 @@ ImageStackView::updateOutputs() {
 	util::rect<double> oldSize = _painter->getSize();
 
 	_painter->setImageStack(_stack);
-	_painter->setCurrentSection(_section);
+	_painter->setCurrentSection(*_section);
 
 	util::rect<double> newSize = _painter->getSize();
 
@@ -55,7 +56,7 @@ ImageStackView::updateOutputs() {
 	_currentImageData.reshape(vigra::MultiArray<2, float>::size_type(_stack->width(), _stack->height()));
 
 	// copy current image data
-	_currentImageData = *(*_stack)[_section];
+	_currentImageData = *(*_stack)[*_section];
 
 	// set content of output
 	*_currentImage = _currentImageData;
@@ -72,22 +73,24 @@ ImageStackView::onKeyDown(gui::KeyDown& signal) {
 
 	if (signal.key == gui::keys::A) {
 
-		_section = std::max(0, _section - 1);
+		*_section = std::max(0, *_section - 1);
 
-		LOG_ALL(imagestackviewlog) << "setting current section to " << _section << std::endl;
+		LOG_ALL(imagestackviewlog) << "setting current section to " << *_section << std::endl;
 
 		setDirty(_painter);
 		setDirty(_currentImage);
+		setDirty(_section);
 	}
 
 	if (signal.key == gui::keys::D) {
 
-		_section = std::min((int)_stack->size() - 1, _section + 1);
+		*_section = std::min((int)_stack->size() - 1, *_section + 1);
 
-		LOG_ALL(imagestackviewlog) << "setting current section to " << _section << std::endl;
+		LOG_ALL(imagestackviewlog) << "setting current section to " << *_section << std::endl;
 
 		setDirty(_painter);
 		setDirty(_currentImage);
+		setDirty(_section);
 	}
 }
 

@@ -30,14 +30,12 @@ private:
 	pipeline::Input<ImageStack>         _stack;
 	pipeline::Output<ImageStackPainter> _painter;
 	pipeline::Output<Image>             _currentImage;
+	pipeline::Output<int>               _section;
 	pipeline::Output<float>             _clickX;
 	pipeline::Output<float>             _clickY;
 
 	signals::Slot<gui::SizeChanged>    _sizeChanged;
 	signals::Slot<gui::ContentChanged> _contentChanged;
-
-	// the section to show
-	int _section;
 
 	// copy of the currently visible image
 	vigra::MultiArray<2, float> _currentImageData;
