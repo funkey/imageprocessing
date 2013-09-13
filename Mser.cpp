@@ -3,7 +3,13 @@
 
 logger::LogChannel mserlog("mserlog", "[Mser] ");
 
-Mser::Mser() {
+template <typename Precision>
+Precision Mser<Precision>::MaxValue;
+
+template <typename Precision>
+Mser<Precision>::Mser() {
+
+	MaxValue = std::numeric_limits<Precision>::max();
 
 	registerInput(_image, "image");
 	registerInput(_parameters, "parameters");
@@ -16,14 +22,16 @@ Mser::Mser() {
 	_neighborOffsets.push_back(util::point<int>( 0,  1)); // down
 }
 
+template <typename Precision>
 void
-Mser::updateOutputs() {
+Mser<Precision>::updateOutputs() {
 
 	process();
 }
 
+template <typename Precision>
 void
-Mser::process() {
+Mser<Precision>::process() {
 
 	LOG_DEBUG(mserlog) << "starting MSER extraction..." << std::endl;
 
@@ -50,30 +58,32 @@ Mser::process() {
 	LOG_DEBUG(mserlog) << "done" << std::endl;
 }
 
+template <typename Precision>
 void
-Mser::allocate() {
+Mser<Precision>::allocate() {
 
 	_size = _image->width()*_image->height();
 
-	LOG_ALL(mserlog) << "allocating memory for " << _size << " pixels" << std::endl;
+	LOG_ALL(mserlog) << "allocating memory for " << _size << " pixels and " << (MaxValue+1) << " values" << std::endl;
 
 	_values.resize(_size);
 	_visited.resize(_size);
 	_pixelList.resize(_size);
 	_nextNeighbors.resize(_size);
-	_stacks.resize(256);
+	_stacks.resize(MaxValue+1);
 	_histories.resize(_size);
-	_regions.resize(257);
+	_regions.resize(MaxValue+2);
 }
 
+template <typename Precision>
 void
-Mser::deallocate() {
+Mser<Precision>::deallocate() {
 
 	LOG_ALL(mserlog) << "deallocating memory" << std::endl;
 
-	std::vector<unsigned char>().swap(_values);
+	std::vector<Precision>().swap(_values);
 	std::vector<bool>().swap(_visited);
-	std::vector<unsigned char>().swap(_nextNeighbors);
+	std::vector<Precision>().swap(_nextNeighbors);
 	std::vector<std::stack<unsigned int> >().swap(_stacks);
 	std::vector<GrowHistory>().swap(_histories);
 	std::vector<mser::Region>().swap(_regions);
@@ -81,25 +91,26 @@ Mser::deallocate() {
 	_pixelList.clear();
 }
 
+template <typename Precision>
 void
-Mser::copyImage() {
+Mser<Precision>::copyImage() {
 
 	if (!_parameters->sameIntensityComponents) {
 
 		unsigned int i = 0;
 		for (Image::iterator p = _image->begin(); p != _image->end(); i++, p++)
-			_values[i] = (unsigned char)((*p)*255.0);
+			_values[i] = (Precision)((*p)*(double)MaxValue);
 
 	} else {
 
 		for (unsigned int x = 0; x < _image->width(); x++)
 			for (unsigned int y = 0; y < _image->height(); y++) {
 
-				unsigned char value = (unsigned char)((*_image)(x, y)*255.0);
+				Precision value = (Precision)((*_image)(x, y)*(double)MaxValue);
 
 				if (x > 0) {
 
-					unsigned char leftValue = (unsigned char)((*_image)(x - 1, y)*255.0);
+					Precision leftValue = (Precision)((*_image)(x - 1, y)*(double)MaxValue);
 
 					if (leftValue != value)
 						value = 0;
@@ -107,7 +118,7 @@ Mser::copyImage() {
 
 				if (y > 0) {
 
-					unsigned char topValue = (unsigned char)((*_image)(x, y - 1)*255.0);
+					Precision topValue = (Precision)((*_image)(x, y - 1)*(double)MaxValue);
 
 					if (topValue != value)
 						value = 0;
@@ -118,8 +129,9 @@ Mser::copyImage() {
 	}
 }
 
+template <typename Precision>
 void
-Mser::reset() {
+Mser<Precision>::reset() {
 
 	// reset the contents of the per-pixel data strucures
 	for (int i = 0; i < _size; i++) {
@@ -144,15 +156,16 @@ Mser::reset() {
 	_msers.clear();
 }
 
+template <typename Precision>
 void
-Mser::process(bool darkToBright) {
+Mser<Precision>::process(bool darkToBright) {
 
 	LOG_DEBUG(mserlog) << "Processing from " << (darkToBright ? "dark to bright" : "bright to dark") << std::endl;
 
 	reset();
 
 	// add dummy region
-	_regions[_currentRegion] = mser::Region(256, &_pixelList, _image, &(*_parameters));
+	_regions[_currentRegion] = mser::Region(MaxValue+1, &_pixelList, _image, &(*_parameters));
 
 	// setup indices
 	_curIndex = 0;
@@ -160,7 +173,7 @@ Mser::process(bool darkToBright) {
 	util::point<int> neighborPosition(0, 0);
 
 	// get value of first pixel to process
-	_curValue = (darkToBright ? _values[_curIndex] : 255 - _values[_curIndex]);
+	_curValue = (darkToBright ? _values[_curIndex] : MaxValue - _values[_curIndex]);
 
 	// start a first region
 	_currentRegion++;
@@ -207,7 +220,7 @@ Mser::process(bool darkToBright) {
 				progress++;
 
 				// get the value of the neighbor
-				unsigned char neighborValue = (darkToBright ? _values[neighborIndex] : 255 - _values[neighborIndex]);
+				Precision neighborValue = (darkToBright ? _values[neighborIndex] : MaxValue - _values[neighborIndex]);
 
 				// neighbor value smaller than current value?
 				if (neighborValue < _curValue) {
@@ -257,7 +270,7 @@ Mser::process(bool darkToBright) {
 			_curIndex = _stacks[curStack].top();
 			_stacks[curStack].pop();
 
-			_curValue = (darkToBright ? _values[_curIndex] : 255 - _values[_curIndex]);
+			_curValue = (darkToBright ? _values[_curIndex] : MaxValue - _values[_curIndex]);
 
 			// get the position from the index
 			_curPosition = indexToPosition(_curIndex);
@@ -270,7 +283,7 @@ Mser::process(bool darkToBright) {
 
 			// ...until we find a non-empty one
 			int nextValue = 0;
-			for (int i = curStack; i < 256; i++) {
+			for (int i = curStack; i <= MaxValue; i++) {
 
 				if (!_stacks[curStack].empty()) {
 
@@ -287,7 +300,7 @@ Mser::process(bool darkToBright) {
 				_curIndex = _stacks[curStack].top();
 				_stacks[curStack].pop();
 
-				_curValue = (darkToBright ? _values[_curIndex] : 255 - _values[_curIndex]);
+				_curValue = (darkToBright ? _values[_curIndex] : MaxValue - _values[_curIndex]);
 				_curPosition = indexToPosition(_curIndex);
 
 				processStack(nextValue);
@@ -305,8 +318,9 @@ Mser::process(bool darkToBright) {
 	//setProgress(progress);
 }
 
+template <typename Precision>
 void
-Mser::processStack(int nextValue) {
+Mser<Precision>::processStack(int nextValue) {
 
 	while (true) {
 
@@ -331,8 +345,9 @@ Mser::processStack(int nextValue) {
 	}
 }
 
+template <typename Precision>
 void
-Mser::processCurrentRegion() {
+Mser<Precision>::processCurrentRegion() {
 
 	// check for stability of the current region
 	if (_regions[_currentRegion].isStable()) {
@@ -362,8 +377,9 @@ Mser::processCurrentRegion() {
 	}
 }
 
+template <typename Precision>
 void
-Mser::setCurrentRegionValue(int value) {
+Mser<Precision>::setCurrentRegionValue(int value) {
 
 	_regions[_currentRegion].addHistory(&_histories[_currentHistory]);
 	_regions[_currentRegion].setValue(value);
@@ -371,8 +387,9 @@ Mser::setCurrentRegionValue(int value) {
 	_currentHistory++;
 }
 
+template <typename Precision>
 void
-Mser::createComponentTree() {
+Mser<Precision>::createComponentTree() {
 
 	LOG_DEBUG(mserlog) << "creating component tree for " << _msers.size() << " regions" << std::endl;
 
@@ -416,7 +433,7 @@ Mser::createComponentTree() {
 	}
 
 	// create an artifical root region that contains all pixels
-	mser::Region root(255, &_pixelList, _image, &(*_parameters), begin, end);
+	mser::Region root(MaxValue, &_pixelList, _image, &(*_parameters), begin, end);
 
 	// add all top-level msers as children to root
 	for (unsigned int i = 0; i < _msers.size(); i++)
@@ -442,8 +459,9 @@ Mser::createComponentTree() {
 	LOG_DEBUG(mserlog) << "created component tree" << std::endl;
 }
 
+template <typename Precision>
 boost::shared_ptr<ComponentTree::Node>
-Mser::createSubComponentTree(boost::shared_ptr<std::vector<util::point<unsigned int> > > sharedPixelList, unsigned int& currentPixel, int mserId) {
+Mser<Precision>::createSubComponentTree(boost::shared_ptr<std::vector<util::point<unsigned int> > > sharedPixelList, unsigned int& currentPixel, int mserId) {
 
 	// get the old pixel list indices
 	int head = _msers[mserId].getHeadIndex();
@@ -493,7 +511,7 @@ Mser::createSubComponentTree(boost::shared_ptr<std::vector<util::point<unsigned 
 
 	// create a new connected component
 	boost::shared_ptr<Image> source = _image;
-	boost::shared_ptr<ConnectedComponent> component = boost::make_shared<ConnectedComponent>(source, (double)_msers[mserId].getValue()/255.0, sharedPixelList, begin, end);
+	boost::shared_ptr<ConnectedComponent> component = boost::make_shared<ConnectedComponent>(source, (double)_msers[mserId].getValue()/(double)MaxValue, sharedPixelList, begin, end);
 
 	// create a component tree node for this connected component
 	boost::shared_ptr<ComponentTree::Node> componentNode = boost::make_shared<ComponentTree::Node>(component);
@@ -505,8 +523,9 @@ Mser::createSubComponentTree(boost::shared_ptr<std::vector<util::point<unsigned 
 	return componentNode;
 }
 
+template <typename Precision>
 util::point<unsigned int>
-Mser::indexToPosition(unsigned int index) {
+Mser<Precision>::indexToPosition(unsigned int index) {
 
 	util::point<int> position;
 
@@ -516,8 +535,13 @@ Mser::indexToPosition(unsigned int index) {
 	return position;
 }
 
+template <typename Precision>
 unsigned int
-Mser::positionToIndex(const util::point<int>& position) {
+Mser<Precision>::positionToIndex(const util::point<int>& position) {
 
 	return position.y*_image->width() + position.x;
 }
+
+// explicit template instantiation
+template class Mser<unsigned char>;
+template class Mser<unsigned short>;

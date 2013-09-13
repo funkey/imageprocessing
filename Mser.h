@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <stack>
+#include <limits>
 
 #include <pipeline/all.h>
 #include <imageprocessing/ComponentTree.h>
@@ -10,6 +11,7 @@
 #include "mser/Region.h"
 #include "mser/GrowHistory.h"
 
+template <typename Precision = unsigned char>
 class Mser : public pipeline::SimpleProcessNode<> {
 
 public:
@@ -28,7 +30,7 @@ private:
 	void allocate();
 
 	/**
-	 * Make a copy of the image an convert it to unsigned char on-the-fly.
+	 * Make a copy of the image an convert it to Precision on-the-fly.
 	 */
 	void copyImage();
 
@@ -76,6 +78,9 @@ private:
 	 */
 	unsigned int positionToIndex(const util::point<int>& position);
 
+	// the maximum value of the given precision
+	static Precision MaxValue;
+
 	// inputs
 	pipeline::Input<Image>          _image;
 	pipeline::Input<MserParameters> _parameters;
@@ -86,8 +91,8 @@ private:
 	// the number of pixels to process
 	int _size;
 
-	// integer values in the range [0,255] that represent the image
-	std::vector<unsigned char> _values;
+	// integer values in the range [0,MaxValue] that represent the image
+	std::vector<Precision> _values;
 
 	// the four offsets to reach a neighbor
 	std::vector<util::point<int> > _neighborOffsets;
@@ -96,7 +101,7 @@ private:
 	std::vector<bool>  _visited;
 
 	// the next nextNeighbors to explore for each pixel
-	std::vector<unsigned char> _nextNeighbors;
+	std::vector<Precision> _nextNeighbors;
 
 	// indices of the pixels in a linked list
 	PixelList _pixelList;
@@ -117,7 +122,7 @@ private:
 	util::point<int> _curPosition;
 
 	// the value of the current pixel
-	unsigned char _curValue;
+	Precision _curValue;
 
 	// the current history
 	unsigned int _currentHistory;
