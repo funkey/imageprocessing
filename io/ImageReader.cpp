@@ -30,8 +30,10 @@ ImageReader::readImage() {
 		uint32_t width, height;
 
 		FILE* f = fopen(_filename.c_str(),"r");
-		fread(&width,sizeof(uint32_t),1,f);
-		fread(&height,sizeof(uint32_t),1,f);
+		if (!fread(&width,sizeof(uint32_t),1,f))
+			return;
+		if (!fread(&height,sizeof(uint32_t),1,f))
+			return;
 
 		LOG_DEBUG(imagereaderlog) << "reading image of size " << width << "x" << height << std::endl;
 
@@ -42,7 +44,8 @@ ImageReader::readImage() {
 		float value;
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {
-				fread(&value,sizeof(float),1,f);
+				if (!fread(&value,sizeof(float),1,f))
+					return;
 				(*_image)(x, y) = value;
 			}
 		}
