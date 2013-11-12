@@ -5,7 +5,7 @@ static logger::LogChannel imagestackviewlog("imagestackviewlog", "[ImageStackVie
 
 ImageStackView::ImageStackView(unsigned int numImages, bool showColored) :
 	_painter(boost::make_shared<ImageStackPainter>(numImages, showColored)),
-	_section(0) {
+	_section(boost::make_shared<int>(0)) {
 
 	registerInput(_stack, "imagestack");
 	registerOutput(_painter, "painter");
