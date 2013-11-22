@@ -13,7 +13,18 @@ class ImageStackView : public pipeline::SimpleProcessNode<> {
 
 public:
 
-	ImageStackView(unsigned int numImages = 1, bool showColored = false);
+	/**
+	 * Create a new image stack view.
+	 *
+	 * @param numImages
+	 *             The number of images to show at the same time vertically 
+	 *             aligned.
+	 * @param gap
+	 *             The gap between the images shown.
+	 * @param showColored
+	 *             Show all images superimposed, each with a different color.
+	 */
+	ImageStackView(unsigned int numImages = 1, double gap = 0.0, bool showColored = false);
 
 	/**
 	 * Set the first k numbers to color images in the stack. If there are

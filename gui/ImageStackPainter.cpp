@@ -2,9 +2,10 @@
 
 static logger::LogChannel imagestackpainterlog("imagestackpainterlog", "[ImageStackPainter] ");
 
-ImageStackPainter::ImageStackPainter(unsigned int numImages, bool showColored) :
+ImageStackPainter::ImageStackPainter(unsigned int numImages, double gap, bool showColored) :
 	_numImages(numImages),
 	_section(0),
+	_gap(gap),
 	_showColored(showColored) {
 
 	if (!_showColored)
@@ -69,8 +70,8 @@ ImageStackPainter::setCurrentSection(unsigned int section) {
 
 	_imageHeight = size.height();
 
-	size.minY -= _numImages/2*_imageHeight;
-	size.maxY += (_numImages/2 - (_numImages + 1)%2)*_imageHeight;
+	size.minY -= _numImages/2*_imageHeight + _numImages*_gap/2;
+	size.maxY += (_numImages/2 - (_numImages + 1)%2)*_imageHeight + _numImages*_gap/2;
 
 	setSize(size);
 
@@ -95,13 +96,11 @@ ImageStackPainter::draw(
 
 		for (int i = 0; i < _numImages; i++) {
 
-			int offset = i - _numImages/2;
+			double d = static_cast<int>(i - _numImages/2)*(_imageHeight + _gap);
 
-			glTranslated(0, -offset*_imageHeight, 0);
-
-			_imagePainters[i]->draw(roi - util::point<double>(static_cast<double>(0), -offset*_imageHeight), resolution);
-
-			glTranslated(0,  offset*_imageHeight, 0);
+			glTranslated(0, -d, 0);
+			_imagePainters[i]->draw(roi - util::point<double>(static_cast<double>(0), -d), resolution);
+			glTranslated(0,  d, 0);
 		}
 	}
 

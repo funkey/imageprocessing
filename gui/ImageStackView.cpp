@@ -3,8 +3,8 @@
 
 static logger::LogChannel imagestackviewlog("imagestackviewlog", "[ImageStackView] ");
 
-ImageStackView::ImageStackView(unsigned int numImages, bool showColored) :
-	_painter(boost::make_shared<ImageStackPainter>(numImages, showColored)),
+ImageStackView::ImageStackView(unsigned int numImages, double gap, bool showColored) :
+	_painter(boost::make_shared<ImageStackPainter>(numImages, gap, showColored)),
 	_section(0) {
 
 	registerInput(_stack, "imagestack");
