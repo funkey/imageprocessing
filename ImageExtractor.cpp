@@ -14,7 +14,7 @@ ImageExtractor::ImageExtractor() {
 }
 
 void
-ImageExtractor::onInputSet(const pipeline::InputSet<ImageStack>&) {
+ImageExtractor::onInputSet(const pipeline::InputSetBase&) {
 
 	LOG_ALL(imageextractorlog) << "input image stack set" << std::endl;
 

@@ -52,7 +52,7 @@ private:
 
 	void updateOutputs();
 
-	void onInputSet(const pipeline::InputSet<ImageStack>& signal);
+	void onInputSet(const pipeline::InputSetBase& signal);
 
 	pipeline::Input<ImageStack> _stack;
 

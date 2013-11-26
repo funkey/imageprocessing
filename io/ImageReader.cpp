@@ -42,8 +42,8 @@ ImageReader::readImage() {
 		*_image = _imageData;
 
 		float value;
-		for (int y = 0; y < height; y++) {
-			for (int x = 0; x < width; x++) {
+		for (unsigned int y = 0; y < height; y++) {
+			for (unsigned int x = 0; x < width; x++) {
 				if (!fread(&value,sizeof(float),1,f))
 					return;
 				(*_image)(x, y) = value;
@@ -51,9 +51,7 @@ ImageReader::readImage() {
 		}
 
 		fclose(f);
-		
-		LOG_DEBUG(imagereaderlog) << "Read data  (0,0): " << _imageData[0,0] << std::endl;
-		LOG_DEBUG(imagereaderlog) << "Read image (0,0): " << (*_image)(0,0) << std::endl;
+
 		return;
 	}
 
@@ -86,6 +84,7 @@ ImageReader::readImage() {
 		factor = 511.0;
 	else {
 
+		factor = 1.0;
 		LOG_ERROR(imagereaderlog) << _filename << " has a unsupported pixel format: " << info.getPixelType() << std::endl;
 	}
 

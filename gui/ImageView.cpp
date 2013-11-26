@@ -13,7 +13,7 @@ ImageView::ImageView() {
 }
 
 void
-ImageView::onInputImageSet(const pipeline::InputSet<Image>& signal) {
+ImageView::onInputImageSet(const pipeline::InputSet<Image>& /*signal*/) {
 
 	if (!_painter)
 		_painter.createData();

@@ -18,12 +18,12 @@ ImageStackHdf5Reader::ImageStackHdf5Reader(
 	_filename(filename),
 	_groupname(groupname),
 	_datasetname(datasetname),
-	_originSection(originSection),
-	_targetSection(targetSection),
 	_minX(minX),
 	_maxX(maxX),
 	_minY(minY),
-	_maxY(maxY) {
+	_maxY(maxY),
+	_originSection(originSection),
+	_targetSection(targetSection) {
 
 	registerOutput(_stack, "stack");
 }
@@ -46,7 +46,7 @@ ImageStackHdf5Reader::readImages() {
 	H5::Group group;
 	std::vector<unsigned char> data;
 
-	for (int i = _originSection; i <= _targetSection; i++) {
+	for (unsigned int i = _originSection; i <= _targetSection; i++) {
 
 		std::stringstream finalgroupname;
 
@@ -64,7 +64,6 @@ ImageStackHdf5Reader::readImages() {
 
 		unsigned int height    = dims[0];
 		unsigned int width     = dims[1];
-		unsigned int sections  = dims[2];
 
 		unsigned int roiwidth;
 		unsigned int roiheight;
@@ -83,7 +82,7 @@ ImageStackHdf5Reader::readImages() {
 		LOG_DEBUG(imagestackhdf5readerlog) << "section width and height " << width << ", " << height << std::endl;
 		LOG_DEBUG(imagestackhdf5readerlog) << "roi width and height " << roiwidth << ", " << roiheight << std::endl;
 
-		for (int j = 0; j < roiwidth*roiheight; j++) {
+		for (unsigned int j = 0; j < roiwidth*roiheight; j++) {
 			(*imageData)[j] = (float)data[ ((_minY + j / roiwidth) * width + _minX) + j % roiwidth ]/255.0;
 			/*if( (*imageData)[j] > 0.39)
 				LOG_DEBUG(imagestackhdf5readerlog) << (*imageData)[j] << std::endl;*/
