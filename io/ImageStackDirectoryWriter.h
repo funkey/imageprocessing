@@ -10,7 +10,7 @@ class ImageStackDirectoryWriter : public pipeline::SimpleProcessNode<> {
 
 public:
 
-	ImageStackDirectoryWriter(std::string directory, std::string basename);
+	ImageStackDirectoryWriter(std::string directory, std::string basename = "");
 
 	bool write(std::string basename = "");
 

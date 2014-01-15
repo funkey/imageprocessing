@@ -1,4 +1,5 @@
 #include <boost/lexical_cast.hpp>
+#include <boost/filesystem.hpp>
 #include <vigra/impex.hxx>
 
 #include <util/Logger.h>
@@ -52,6 +53,11 @@ ImageStackDirectoryWriter::write(std::string basename) {
 	updateInputs();
 
 	boost::unique_lock<boost::shared_mutex> lock(_stack->getMutex());
+
+	boost::filesystem::path directory(_directory);
+
+	if (!boost::filesystem::exists(directory))
+		boost::filesystem::create_directory(directory);
 
 	// save to file
 
