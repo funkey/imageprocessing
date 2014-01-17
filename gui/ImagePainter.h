@@ -113,6 +113,8 @@ public:
 	 */
 	void setTransparent(bool transparent);
 
+private:
+
 	/**
 	 * Normalize and re-load image for intensity images.
 	 */
@@ -122,6 +124,21 @@ public:
 	 * Normalize and re-load image for multi-channel images.
 	 */
 	void loadNormalized(const boost::false_type& arithmetic);
+
+	/**
+	 * Re-load image for intensity images.
+	 */
+	void load(const boost::true_type& arithmetic);
+
+	/**
+	 * Re-load image for multi-channel images.
+	 */
+	void load(const boost::false_type& arithmetic);
+
+	/**
+	 * Get the RGB values for hsv.
+	 */
+	void hsvToRgb(double h, double s, double v, unsigned char& r, unsigned char& g, unsigned char& b);
 
 	/**
 	 * Entry point for the texture reload thread.
@@ -410,7 +427,7 @@ ImagePainter<Image, Pointer>::reloadTexture() {
 		                         << _image->width() << "x" << _image->height() << std::endl;
 
 		// crate new texture
-		_imageTexture = new Texture(_image->width(), _image->height(), detail::pixel_format_traits<value_type>::gl_format);
+		_imageTexture = new Texture(_image->width(), _image->height(), GL_RGBA);
 
 	} else {
 
@@ -434,7 +451,7 @@ ImagePainter<Image, Pointer>::reloadTexture() {
 
 	} else {
 
-		_imageTexture->loadData(&(*_image->begin()));
+		load(boost::is_arithmetic<value_type>());
 	}
 
 	// set reported size
@@ -477,6 +494,124 @@ ImagePainter<Image, Pointer>::loadNormalized(const boost::false_type& arithmetic
 
 	// for non-intensity images we leave it like that for the moment...
 	_imageTexture->loadData(&(*_image->begin()));
+}
+
+template <typename Image, typename Pointer>
+void
+ImagePainter<Image, Pointer>::load(const boost::true_type&) {
+
+	bool       valid = false;
+	value_type min = 0.0f;
+	value_type max = 1.0f;
+
+	// find min and max of image
+	for (typename Image::iterator i = _image->begin(); i != _image->end(); i++) {
+
+		if (valid) {
+
+			min = std::min(min, *i);
+			max = std::max(max, *i);
+
+		} else {
+
+			min = *i;
+			max = *i;
+			valid = true;
+		}
+	}
+
+	if (max > 1.0) {
+
+		// consider this image as a color index image
+		std::vector<boost::array<unsigned char, 4> > colorImage;
+		colorImage.reserve(_image->size());
+
+		boost::array<unsigned char, 4> pixel;
+		pixel[3] = 255;
+
+		for (typename Image::iterator i = _image->begin(); i != _image->end(); i++) {
+
+			// fire
+			//float h = ((*i) - min)/(max - min);//fmod(static_cast<float>(*i)*M_PI, 1.0);
+
+			float h = fmod(static_cast<float>(*i)*M_PI, 1.0);
+			float s = 0.5 + fmod(static_cast<float>(*i)*M_PI*2, 0.5);
+			float v = (*i == 0 ? 0.0 : 0.75 + fmod(static_cast<float>(*i)*M_PI*3, 0.25));
+			hsvToRgb(h, s, v, pixel[0], pixel[1], pixel[2]);
+			colorImage.push_back(pixel);
+		}
+
+		_imageTexture->loadData(&(*colorImage.begin()));
+
+	} else {
+
+		// non-intensity images are just loaded
+		_imageTexture->loadData(&(*_image->begin()));
+	}
+}
+
+template <typename Image, typename Pointer>
+void
+ImagePainter<Image, Pointer>::load(const boost::false_type& arithmetic) {
+
+	// non-intensity images are just loaded
+	_imageTexture->loadData(&(*_image->begin()));
+}
+
+template <typename Image, typename Pointer>
+void
+ImagePainter<Image, Pointer>::hsvToRgb(double h, double s, double v, unsigned char& r, unsigned char& g, unsigned char& b) {
+
+	if(s < 0) s = 0;
+	if(s > 1) s = 1;
+	if(v < 0) v = 0;
+	if(v > 1) v = 1;
+
+	if(s == 0) {
+		r = (unsigned char)255.0*v;
+		g = (unsigned char)255.0*v;
+		b = (unsigned char)255.0*v;
+	}
+
+	h = h - floorf(h/360.0); // want h to be in 0..1
+
+	unsigned int i = h*6;
+	double f = (h*6) - i;
+	double p = v*(1.0f - s); 
+	double q = v*(1.0f - s*f);
+	double t = v*(1.0f - s*(1.0f-f));
+	switch(i%6) {
+	case 0:
+		r = (unsigned char)255.0*v;
+		g = (unsigned char)255.0*t;
+		b = (unsigned char)255.0*p;
+		return;
+	case 1:
+		r = (unsigned char)255.0*q;
+		g = (unsigned char)255.0*v;
+		b = (unsigned char)255.0*p;
+		return;
+	case 2:
+		r = (unsigned char)255.0*p;
+		g = (unsigned char)255.0*v;
+		b = (unsigned char)255.0*t;
+		return;
+	case 3:
+		r = (unsigned char)255.0*p;
+		g = (unsigned char)255.0*q;
+		b = (unsigned char)255.0*v;
+		return;
+	case 4:
+		r = (unsigned char)255.0*t;
+		g = (unsigned char)255.0*p;
+		b = (unsigned char)255.0*v;
+		return;
+	case 5:
+		r = (unsigned char)255.0*v;
+		g = (unsigned char)255.0*p;
+		b = (unsigned char)255.0*q;
+		return;
+	}
 }
 
 template <typename Image, typename Pointer>
