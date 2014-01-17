@@ -69,8 +69,10 @@ ImageStackDirectoryWriter::write(std::string basename) {
 		number << std::setw(8) << std::setfill('0');
 		number << i;
 
-		std::string filename = _directory + "/" + _basename + basename + number.str() + ".png";
-		vigra::exportImage(vigra::srcImageRange(*image), vigra::ImageExportInfo(filename.c_str()));
+		// at least on Ubuntu 13.04, this maintains the exact values and does 
+		// not rescale
+		std::string filename = _directory + "/" + _basename + basename + number.str() + ".tif";
+		vigra::exportImage(vigra::srcImageRange(*image), vigra::ImageExportInfo(filename.c_str()).setPixelType("FLOAT"));
 
 		i++;
 	}
