@@ -573,7 +573,7 @@ ImagePainter<Image, Pointer>::hsvToRgb(double h, double s, double v, unsigned ch
 		b = (unsigned char)255.0*v;
 	}
 
-	h = h - floorf(h/360.0); // want h to be in 0..1
+	h = fmod(h, 1.0); // want h to be in 0..1
 
 	unsigned int i = h*6;
 	double f = (h*6) - i;
