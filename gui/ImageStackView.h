@@ -31,12 +31,14 @@ public:
 	 * more images in the stack, they will be colored randomly.
 	 */
 	void setColors(std::vector<float> reds, std::vector<float> greens, std::vector<float> blues);
+
 private:
 
 	void updateOutputs();
 
 	void onKeyDown(gui::KeyDown& signal);
 	void onButtonDown(gui::MouseDown& signal);
+	void onMouseMove(gui::MouseMove& signal);
 
 	pipeline::Input<ImageStack>         _stack;
 	pipeline::Output<ImageStackPainter> _painter;

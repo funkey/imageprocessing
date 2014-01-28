@@ -18,6 +18,7 @@ ImageStackView::ImageStackView(unsigned int numImages, double gap, bool showColo
 	_painter.registerForwardSlot(_contentChanged);
 	_painter.registerForwardCallback(&ImageStackView::onKeyDown, this);
 	_painter.registerForwardCallback(&ImageStackView::onButtonDown, this);
+	_painter.registerForwardCallback(&ImageStackView::onMouseMove, this);
 }
 
 void
@@ -109,4 +110,24 @@ ImageStackView::onButtonDown(gui::MouseDown& signal) {
 		setDirty(_clickX);
 		setDirty(_clickY);
 	}
+}
+
+void
+ImageStackView::onMouseMove(gui::MouseMove& signal) {
+
+	LOG_ALL(imagestackviewlog) << "got a mouse move event" << std::endl;
+
+	int x = signal.position.x;
+	int y = signal.position.y;
+
+	if (x >= 0 && x < (int)_stack->width() && y >= 0 && y < (int)_stack->height())
+		_painter->setAnnotation(
+				x, y,
+				boost::lexical_cast<std::string>(x) + ", " +
+				boost::lexical_cast<std::string>(y) + ", " +
+				boost::lexical_cast<std::string>(*_section));
+	else
+		_painter->unsetAnnotation();
+
+	_contentChanged();
 }

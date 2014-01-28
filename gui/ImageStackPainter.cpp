@@ -104,6 +104,15 @@ ImageStackPainter::draw(
 		}
 	}
 
+	if (_annotation != "") {
+
+		gui::TextPainter textPainter(_annotation);
+
+		glTranslatef( _annotationX,  _annotationY, 0.0f);
+		textPainter.draw(roi - util::point<double>(_annotationX, _annotationY), resolution);
+		glTranslatef(-_annotationX, -_annotationY, 0.0f);
+	}
+
 	return false;
 }
 

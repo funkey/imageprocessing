@@ -45,6 +45,24 @@ public:
 	 */
 	void setColors(std::vector<float> reds, std::vector<float> greens, std::vector<float> blues);
 
+	/**
+	 * Set an annotation to show for the image stack.
+	 */
+	void setAnnotation(double x, double y, std::string annotation) {
+
+		_annotationX = x;
+		_annotationY = y;
+		_annotation  = annotation;
+	}
+
+	/**
+	 * Remove an annotation.
+	 */
+	void unsetAnnotation() {
+
+		_annotation = "";
+	}
+
 private:
 
 	// the whole stack
@@ -72,6 +90,10 @@ private:
 	std::vector<float> _reds;
 	std::vector<float> _greens;
 	std::vector<float> _blues;
+
+	double _annotationX;
+	double _annotationY;
+	std::string _annotation;
 };
 
 #endif // IMAGEPROCESSING_GUI_IMAGE_STACK_PAINTER_H__
