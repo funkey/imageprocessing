@@ -25,8 +25,7 @@ private:
 
 	void updateOutputs() {
 
-		_imageData.reshape(vigra::MultiArray<2, float>::size_type(*_width, *_height));
-		*_cropped = _imageData;
+		*_cropped = Image::Create(*_width, *_height);
 
 		Image::difference_type upperLeft(*_x, *_y);
 		Image::difference_type lowerRight(*_x + *_width, *_y + *_height);
@@ -43,9 +42,6 @@ private:
 	pipeline::Input<int>   _height;
 
 	pipeline::Output<Image> _cropped;
-
-	// the cropped image data
-	vigra::MultiArray<2, float> _imageData;
 };
 
 #endif // IMAGEPROCESSING_IMAGE_CROP_H__

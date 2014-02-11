@@ -23,38 +23,6 @@ ImageReader::updateOutputs() {
 void
 ImageReader::readImage() {
 
-	if (_filename.find(".feat") == _filename.size() - 5) {
-
-		LOG_DEBUG(imagereaderlog) << "found simple image file, using own importer" << std::endl;
-
-		uint32_t width, height;
-
-		FILE* f = fopen(_filename.c_str(),"r");
-		if (!fread(&width,sizeof(uint32_t),1,f))
-			return;
-		if (!fread(&height,sizeof(uint32_t),1,f))
-			return;
-
-		LOG_DEBUG(imagereaderlog) << "reading image of size " << width << "x" << height << std::endl;
-
-		_imageData.reshape(vigra::MultiArray<2, float>::size_type(width, height));
-
-		*_image = _imageData;
-
-		float value;
-		for (unsigned int y = 0; y < height; y++) {
-			for (unsigned int x = 0; x < width; x++) {
-				if (!fread(&value,sizeof(float),1,f))
-					return;
-				(*_image)(x, y) = value;
-			}
-		}
-
-		fclose(f);
-
-		return;
-	}
-
 	// get information about the image to read
 	vigra::ImageImportInfo info(_filename.c_str());
 
@@ -64,10 +32,10 @@ ImageReader::readImage() {
 		LOG_ERROR(imagereaderlog) << _filename << " is not a gray-scale image!" << std::endl;
 		return;
 	}
-	_imageData.reshape(vigra::MultiArray<2, float>::size_type(info.width(), info.height()));
 
-	// resize image
-	*_image = _imageData;
+	// allocate image
+	Image image = Image::Create(info.width(), info.height());
+	*_image = image;
 
 	// read image
 	importImage(info, vigra::destImage(*_image));

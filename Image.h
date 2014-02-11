@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 
 #include <vigra/multi_array.hxx>
 
@@ -16,6 +17,11 @@ typedef vigra::MultiArrayView<2, float> array_type;
 class Image : public pipeline::Data, public array_type {
 
 public:
+
+	static Image Create(size_t width, size_t height) {
+
+		return Image(width, height, boost::make_shared<std::vector<float> >(width*height));
+	}
 
 	Image() :
 		array_type() {};
