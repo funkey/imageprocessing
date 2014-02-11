@@ -25,9 +25,15 @@ ColorImageWriter::write(std::string filename) {
 
 	LOG_DEBUG(colorimagewriterlog) << "attempting to write image" << std::endl;
 
-	if (!_r && !_g && !_b) {
+	if (!_r || !_g || !_b) {
 
 		LOG_ERROR(colorimagewriterlog) << "no input image set" << std::endl;
+		return;
+	}
+
+	if (_r->shape() != _g->shape() || _r->shape() != _b->shape()) {
+
+		LOG_ERROR(colorimagewriterlog) << "images are not of same size" << std::endl;
 		return;
 	}
 
@@ -42,10 +48,13 @@ ColorImageWriter::write(std::string filename) {
 
 	while (rgb != rgbImage.end()) {
 
-		rgb->red()   = *ri++;
-		rgb->green() = *gi++;
-		rgb->blue()  = *bi++;
+		rgb->red()   = *ri;
+		rgb->green() = *gi;
+		rgb->blue()  = *bi;
 
+		ri++;
+		gi++;
+		bi++;
 		rgb++;
 	}
 
