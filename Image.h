@@ -16,8 +16,11 @@ public:
 
 	Image() {};
 
-	Image(size_t width, size_t height) :
-		array_type(array_type::difference_type(width, height)) {}
+	Image(size_t width, size_t height, float initialValue = 0.0f) :
+		array_type(array_type::difference_type(width, height)) {
+
+		init(initialValue);
+	}
 
 	/**
 	 * The width of the image.
