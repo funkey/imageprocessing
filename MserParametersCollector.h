@@ -14,8 +14,6 @@ public:
 
 	ParametersCollector();
 
-	~ParametersCollector();
-
 private:
 
 	void updateOutputs();
