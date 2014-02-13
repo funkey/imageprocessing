@@ -98,12 +98,10 @@ ImageAverager::accumulate() {
 
 	updateInputs();
 
-	if (_averageData.shape()  != _image->shape()) {
+	if (_average->shape()  != _image->shape()) {
 
-		_averageData.reshape(_image->shape());
-		_averageData.init(0.0);
-
-		*_average = _averageData;
+		_average->reshape(_image->shape());
+		_average->init(0.0);
 	}
 
 	*_average += *_image;

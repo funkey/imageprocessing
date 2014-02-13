@@ -21,7 +21,7 @@ MedianFilter::updateOutputs() {
 
 	image.reshape(vigra::MultiArray<2, int>::size_type(width, height));
 	filtered.reshape(vigra::MultiArray<2, int>::size_type(width, height));
-	_data.reshape(vigra::MultiArray<2, float>::size_type(width, height));
+	_filtered->reshape(width, height);
 
 	vigra::transformImage(
 			srcImageRange(*_image),
@@ -35,8 +35,6 @@ MedianFilter::updateOutputs() {
 
 	vigra::transformImage(
 			srcImageRange(filtered),
-			destImage(_data),
+			destImage(*_filtered),
 			vigra::functor::Arg1()/vigra::functor::Param(255.0));
-
-	*_filtered = _data;
 }

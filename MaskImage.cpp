@@ -16,13 +16,11 @@ MaskImage::updateOutputs() {
 	int width  = _image->width();
 	int height = _image->height();
 
-	_data.reshape(vigra::MultiArray<2, float>::size_type(width, height));
+	_masked->reshape(width, height);
 
 	vigra::combineTwoMultiArrays(
 			srcMultiArrayRange(*_image),
 			srcMultiArray(*_mask),
-			destMultiArray(_data),
+			destMultiArray(*_masked),
 			ifThenElse(vigra::functor::Arg2() == vigra::functor::Param(1), vigra::functor::Arg1(), vigra::functor::Param(_maskValue)));
-
-	*_masked = _data;
 }

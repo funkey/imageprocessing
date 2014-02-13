@@ -20,8 +20,6 @@ private:
 	pipeline::Input<int>    _radius;
 	pipeline::Input<Image>  _image;
 	pipeline::Output<Image> _filtered;
-
-	vigra::MultiArray<2, float> _data;
 };
 
 #endif // IMAGEPROCESSING_MEDIAN_FILTER_H__

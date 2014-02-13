@@ -34,8 +34,7 @@ ImageReader::readImage() {
 	}
 
 	// allocate image
-	Image image = Image::Create(info.width(), info.height());
-	*_image = image;
+	_image->reshape(info.width(), info.height());
 
 	// read image
 	importImage(info, vigra::destImage(*_image));

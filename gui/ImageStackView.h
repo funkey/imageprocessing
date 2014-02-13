@@ -50,9 +50,6 @@ private:
 	signals::Slot<gui::SizeChanged>    _sizeChanged;
 	signals::Slot<gui::ContentChanged> _contentChanged;
 
-	// copy of the currently visible image
-	vigra::MultiArray<2, float> _currentImageData;
-
 	// the last mouse down position
 	float _mouseDownX;
 	float _mouseDownY;

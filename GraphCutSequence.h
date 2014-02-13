@@ -41,8 +41,6 @@ private:
 	pipeline::Output<Image> _average;
 
 	unsigned int _numImages;
-
-	vigra::MultiArray<2, float> _averageData;
 };
 
 class GraphCutSequence : public pipeline::SimpleProcessNode<> {

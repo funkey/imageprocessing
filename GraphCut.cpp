@@ -251,8 +251,7 @@ void GraphCut::getSegmentation(){
 	LOG_DEBUG(graphcutlog) << "resizing image to " << _image->shape() << std::endl;
 
 	// adjust the size of the segmentation output to match the input image
-	_segmentationData.reshape(_image->shape());
-	*_segmentation = _segmentationData;
+	_segmentation->reshape(_image->shape());
 
 	for (int x = 0; x < _image->width(); x++){
 

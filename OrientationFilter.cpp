@@ -28,7 +28,7 @@ OrientationFilter::updateOutputs() {
 	int width  = _image->width();
 	int height = _image->height();
 
-	_orientationsData.reshape(vigra::MultiArray<2, float>::size_type(width, height));
+	_orientations->reshape(width, height);
 
 	_gradX.reshape(vigra::MultiArray<2, float>::size_type(width, height));
 	_gradY.reshape(vigra::MultiArray<2, float>::size_type(width, height));
@@ -44,10 +44,8 @@ OrientationFilter::updateOutputs() {
 	vigra::combineTwoMultiArrays(
 			srcMultiArrayRange(_gradX),
 			srcMultiArray(_gradY),
-			destMultiArray(_orientationsData),
+			destMultiArray(*_orientations),
 			discretizeOrientations);
-
-	*_orientations = _orientationsData;
 }
 
 float

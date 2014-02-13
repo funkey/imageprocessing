@@ -81,9 +81,6 @@ private:
 
 	// remember the previous parameters
 	GraphCutParameters _prevParameters;
-
-	// segmentation data
-	vigra::MultiArray<2, float> _segmentationData;
 };
 
 #endif // IMAGEPROCESSING_GRAPH_CUT_H__

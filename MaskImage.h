@@ -20,8 +20,6 @@ private:
 	pipeline::Input<Image>  _mask;
 	pipeline::Output<Image> _masked;
 
-	vigra::MultiArray<2, float> _data;
-
 	float _maskValue;
 };
 
