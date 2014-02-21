@@ -72,12 +72,29 @@ public:
 	bool operator<(const ConnectedComponent& other) const;
 
 	/**
-	 * Intersect this connected component with another one.	 *
+	 * Create a ConnectedComponent that is the translation of this one.
+	 * @param pt the point representing the translation vector.
+	 * @return The translation of this ConnectedComponent by pt.
+	 */
+	ConnectedComponent translate(const util::point<int>& pt);
+	
+	/**
+	 * Intersect this connected component with another one.
 	 *
 	 * @param other The component to intersect with.
 	 * @return The intersection of this and another component.
 	 */
 	ConnectedComponent intersect(const ConnectedComponent& other);
+
+	/**
+	 * Check if two connected components intersect.
+	 */
+	bool intersects(const ConnectedComponent& other);
+
+	/**
+	 * Test equality of this ConnectedComponent against another by geometry.
+	 */
+	bool operator==(const ConnectedComponent& other) const;
 
 private:
 

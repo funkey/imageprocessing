@@ -98,6 +98,20 @@ ConnectedComponent::operator<(const ConnectedComponent& other) const {
 }
 
 ConnectedComponent
+ConnectedComponent::translate(const util::point<int>& pt)
+{
+	boost::shared_ptr<pixel_list_type> translation = boost::make_shared<pixel_list_type>();
+	
+	foreach (const util::point<unsigned int>& pixel, getPixels())
+	{
+		translation->push_back(pixel + pt);
+	}
+	
+	return ConnectedComponent(_source, _value, translation, 0, translation->size());
+}
+
+
+ConnectedComponent
 ConnectedComponent::intersect(const ConnectedComponent& other) {
 
 	boost::shared_ptr<pixel_list_type> intersection = boost::make_shared<pixel_list_type>();
@@ -118,4 +132,72 @@ ConnectedComponent::intersect(const ConnectedComponent& other) {
 		}
 
 	return ConnectedComponent(_source, _value, intersection, 0, intersection->size());
+}
+
+bool ConnectedComponent::intersects(const ConnectedComponent& other)
+{
+	if (_boundingBox.intersects(other.getBoundingBox()))
+	{
+		bitmap_type::size_type size = _bitmap.shape();
+
+		foreach (const util::point<unsigned int>& pixel, other.getPixels())
+		{
+			if (_boundingBox.contains(pixel)) {
+
+				unsigned int x = pixel.x - _boundingBox.minX;
+				unsigned int y = pixel.y - _boundingBox.minY;
+
+				if (x >= size[0] || y >= size[1])
+					continue;
+
+				if (_bitmap(x, y))
+				{
+					return true;
+				}
+			}
+		}
+	}
+	
+	return false;
+}
+
+
+bool
+ConnectedComponent::operator==(const ConnectedComponent& other) const
+{
+	util::rect<int> thisBound = getBoundingBox();
+	util::rect<int> otherBound = other.getBoundingBox();
+
+	if (thisBound == otherBound)
+	{
+		// If this bound equals that bound
+		bitmap_type thisBitmap = getBitmap();
+		bitmap_type otherBitmap = other.getBitmap();
+		
+		//Check that the other's bitmap contains all of our pixels.
+		foreach (const util::point<unsigned int> pixel, getPixels())
+		{
+			if (!otherBitmap(pixel.x - thisBound.minX, pixel.y - thisBound.minY))
+			{
+				return false;
+			}
+		}
+		
+		//Check that our bitmap contains all of the other's pixels.
+		foreach (const util::point<unsigned int> pixel, other.getPixels())
+		{
+			if (!thisBitmap(pixel.x - otherBound.minX, pixel.y - otherBound.minY))
+			{
+				return false;
+			}
+		}
+		
+		//If both conditions are true, both components contain each other, and are therefore equal.
+		return true;
+	}
+	else
+	{
+		// If our bound is unequal to the other's bound, then we're unequal.
+		return false;
+	}
 }
