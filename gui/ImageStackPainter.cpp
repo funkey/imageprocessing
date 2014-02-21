@@ -36,7 +36,6 @@ ImageStackPainter::setImageStack(boost::shared_ptr<ImageStack> stack) {
 				(i < _greens.size() ? _greens[i] : static_cast<float>(rand())/RAND_MAX),
 				(i < _blues.size()  ? _blues[i]  : static_cast<float>(rand())/RAND_MAX));
 			painter->setTransparent(true);
-			painter->update();
 
 			_imagePainters.push_back(painter);
 
@@ -63,7 +62,6 @@ ImageStackPainter::setCurrentSection(unsigned int section) {
 		LOG_ALL(imagestackpainterlog) << "index for image " << i << " is " << imageIndex << std::endl;
 
 		_imagePainters[i]->setImage((*_stack)[imageIndex]);
-		_imagePainters[i]->update();
 	}
 
 	util::rect<double> size = _imagePainters[0]->getSize();
