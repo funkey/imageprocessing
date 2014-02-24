@@ -104,7 +104,7 @@ public:
 	void setColor(float red, float green, float blue);
 
 	/**
-	 * Show the image transparent in the dart areas.
+	 * Show the image transparent in the dark areas.
 	 */
 	void setTransparent(bool transparent);
 
