@@ -24,12 +24,12 @@ private:
 	void onInputImageSet(const pipeline::InputSet<Image>& signal);
 
 	// input/output
-	pipeline::Input<Image>                      _image;
-	pipeline::Output<gui::ImagePainter<Image> > _painter;
+	pipeline::Input<Image>                 _image;
+	pipeline::Output<ImagePainter<Image> > _painter;
 
 	// forward signals
-	signals::Slot<const gui::SizeChanged>    _sizeChanged;
-	signals::Slot<const gui::ContentChanged> _contentChanged;
+	signals::Slot<const SizeChanged>    _sizeChanged;
+	signals::Slot<const ContentChanged> _contentChanged;
 };
 
 } // namespace gui

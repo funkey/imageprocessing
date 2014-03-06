@@ -27,15 +27,6 @@ ImageExtractor::onInputSet(const pipeline::InputSetBase&) {
 
 		LOG_ALL(imageextractorlog) << "(re)setting output " << i << std::endl;
 
-		if (_images[i]) {
-
-			LOG_ALL(imageextractorlog) << "image was " << _images[i]->width() << "x" << _images[i]->height() << std::endl;
-
-		} else {
-
-			LOG_ALL(imageextractorlog) << "image was unset" << std::endl;
-		}
-
 		_images[i] = (*_stack)[i];
 
 		LOG_ALL(imageextractorlog) << "image is " << _images[i]->width() << "x" << _images[i]->height() << std::endl;

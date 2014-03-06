@@ -16,7 +16,7 @@ void
 ImageView::onInputImageSet(const pipeline::InputSet<Image>& /*signal*/) {
 
 	if (!_painter)
-		_painter.createData();
+		_painter = new ImagePainter<Image>();
 
 	LOG_ALL(imageviewlog) << "got a new input image -- sending SizeChanged" << std::endl;
 
