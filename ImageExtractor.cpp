@@ -10,7 +10,7 @@ ImageExtractor::ImageExtractor() {
 
 	registerInput(_stack, "stack");
 
-	_stack.registerBackwardCallback(&ImageExtractor::onInputSet, this);
+	_stack.registerCallback(&ImageExtractor::onInputSet, this);
 }
 
 void

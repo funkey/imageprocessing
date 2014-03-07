@@ -24,9 +24,9 @@ GraphCut::GraphCut() :
 	registerOutput(_energy, "energy");
 
 	// register for input modification signals
-	_image.registerBackwardCallback(&GraphCut::onModifiedImage, this);
-	_parameters.registerBackwardCallback(&GraphCut::onModifiedGCParameters, this);
-	_pottsImage.registerBackwardCallback(&GraphCut::onModifiedPottsImage, this);
+	_image.registerCallback(&GraphCut::onModifiedImage, this);
+	_parameters.registerCallback(&GraphCut::onModifiedGCParameters, this);
+	_pottsImage.registerCallback(&GraphCut::onModifiedPottsImage, this);
 }
 
 void

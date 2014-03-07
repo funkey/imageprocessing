@@ -14,11 +14,11 @@ ImageStackView::ImageStackView(unsigned int numImages, double gap, bool showColo
 	registerOutput(_clickX, "click x");
 	registerOutput(_clickY, "click y");
 
-	_painter.registerForwardSlot(_sizeChanged);
-	_painter.registerForwardSlot(_contentChanged);
-	_painter.registerForwardCallback(&ImageStackView::onKeyDown, this);
-	_painter.registerForwardCallback(&ImageStackView::onButtonDown, this);
-	_painter.registerForwardCallback(&ImageStackView::onMouseMove, this);
+	_painter.registerSlot(_sizeChanged);
+	_painter.registerSlot(_contentChanged);
+	_painter.registerCallback(&ImageStackView::onKeyDown, this);
+	_painter.registerCallback(&ImageStackView::onButtonDown, this);
+	_painter.registerCallback(&ImageStackView::onMouseMove, this);
 }
 
 void

@@ -8,8 +8,8 @@ ComponentTreeView::ComponentTreeView() {
 	registerInput(_componentTree, "component tree");
 	registerOutput(_painter, "painter");
 
-	_painter.registerForwardSlot(_contentChanged);
-	_painter.registerForwardSlot(_sizeChanged);
+	_painter.registerSlot(_contentChanged);
+	_painter.registerSlot(_sizeChanged);
 }
 
 void

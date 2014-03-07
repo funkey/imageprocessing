@@ -15,7 +15,7 @@ ImageStackDirectoryWriter::ImageStackDirectoryWriter(std::string directory, std:
 
 	registerInput(_stack, "image stack");
 
-	_stack.registerBackwardCallback(&ImageStackDirectoryWriter::onModified, this);
+	_stack.registerCallback(&ImageStackDirectoryWriter::onModified, this);
 }
 
 void

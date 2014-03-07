@@ -7,9 +7,9 @@ ImageView::ImageView() {
 	registerInput(_image, "image");
 	registerOutput(_painter, "painter");
 
-	_image.registerBackwardCallback(&ImageView::onInputImageSet, this);
-	_painter.registerForwardSlot(_contentChanged);
-	_painter.registerForwardSlot(_sizeChanged);
+	_image.registerCallback(&ImageView::onInputImageSet, this);
+	_painter.registerSlot(_contentChanged);
+	_painter.registerSlot(_sizeChanged);
 }
 
 void
