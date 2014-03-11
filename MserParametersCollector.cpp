@@ -15,6 +15,9 @@ ParametersCollector::ParametersCollector() {
 void
 ParametersCollector::updateOutputs() {
 
+	if (!_parameters)
+		_parameters = new MserParameters();
+
 	if (_delta)
 		_parameters->delta        = (int)*_delta;
 

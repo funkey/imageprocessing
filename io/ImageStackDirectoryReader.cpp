@@ -47,7 +47,8 @@ ImageStackDirectoryReader::ImageStackDirectoryReader(const std::string& director
 	registerOutput(_stackAssembler->getOutput(), "stack");
 }
 
-ImageStackDirectoryReader::StackAssembler::StackAssembler() {
+ImageStackDirectoryReader::StackAssembler::StackAssembler() :
+	_stack(new ImageStack()) {
 
 	registerInputs(_images, "images");
 	registerOutput(_stack, "stack");

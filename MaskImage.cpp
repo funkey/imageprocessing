@@ -3,6 +3,7 @@
 #include "MaskImage.h"
 
 MaskImage::MaskImage(float maskValue) :
+		_masked(new Image()),
 		_maskValue(maskValue) {
 
 	registerInput(_image, "image");

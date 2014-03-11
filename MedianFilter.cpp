@@ -2,7 +2,8 @@
 
 #include "MedianFilter.h"
 
-MedianFilter::MedianFilter() {
+MedianFilter::MedianFilter() :
+	_filtered(new Image()) {
 
 	registerInput(_radius, "radius");
 	registerInput(_image, "image");

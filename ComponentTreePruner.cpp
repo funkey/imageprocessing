@@ -14,6 +14,9 @@ ComponentTreePruner::ComponentTreePruner() {
 void
 ComponentTreePruner::updateOutputs() {
 
+	if (!_pruned)
+		_pruned = new ComponentTree();
+
 	prune();
 }
 

@@ -393,6 +393,9 @@ Mser<Precision>::createComponentTree() {
 
 	LOG_DEBUG(mserlog) << "creating component tree for " << _msers.size() << " regions" << std::endl;
 
+	if (!_componentTree)
+		_componentTree = new ComponentTree();
+
 	_componentTree->clear();
 
 	/* Here, we "straighten out" the pixel list that was build by the mser

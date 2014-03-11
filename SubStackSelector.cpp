@@ -13,6 +13,9 @@ SubStackSelector::SubStackSelector(int firstImage, int lastImage) :
 void
 SubStackSelector::updateOutputs() {
 
+	if (!_subStack)
+		_subStack = new ImageStack();
+
 	_subStack->clear();
 
 	LOG_ALL(substackselectorlog)

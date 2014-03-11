@@ -48,7 +48,7 @@ util::ProgramOption optionEightNeighborhood(
 		util::_description_text = "Enable an eight-neighborhood for the graph-cut.");
 
 SequenceParameterGenerator::SequenceParameterGenerator() :
-	_parameters(boost::make_shared<GraphCutParameters>()),
+	_parameters(new GraphCutParameters()),
 	_maxForegroundPrior(optionMaxForegroundPrior),
 	_minForegroundPrior(optionMinForegroundPrior),
 	_stepForegroundPrior(optionStepForegroundPrior) {
@@ -86,7 +86,7 @@ SequenceParameterGenerator::updateOutputs() {
 }
 
 ImageAverager::ImageAverager() :
-	_average(boost::make_shared<Image>()),
+	_average(new Image()),
 	_numImages(0) {
 
 	registerInput(_image, "image");

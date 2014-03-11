@@ -13,6 +13,9 @@ ComponentTreeDownSampler::ComponentTreeDownSampler() {
 void
 ComponentTreeDownSampler::updateOutputs() {
 
+	if (!_downsampled)
+		_downsampled = new ComponentTree();
+
 	downsample();
 }
 

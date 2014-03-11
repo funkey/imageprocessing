@@ -10,6 +10,11 @@ public:
 
 	ImageReader(std::string filename);
 
+	~ImageReader() {
+
+		std::cout << "destructed" << std::endl;
+	}
+
 private:
 
 	void updateOutputs();

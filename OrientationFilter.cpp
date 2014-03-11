@@ -9,6 +9,7 @@
 logger::LogChannel orientationfilterlog("orientationfilterlog", "[OrientationFilter] ");
 
 OrientationFilter::OrientationFilter(unsigned int numOrientations) :
+		_orientations(new Image()),
 		_numOrientations(numOrientations) {
 
 	registerInput(_scale, "scale");

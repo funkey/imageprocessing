@@ -6,8 +6,8 @@
 logger::LogChannel graphcutlog("graphcutlog", "[GraphCut] ");
 
 GraphCut::GraphCut() :
-		_segmentation(boost::make_shared<Image>()),
-		_energy(boost::make_shared<double>(0)),
+		_segmentation(new Image()),
+		_energy(new double(0)),
 		_graph(0, 0),
 		_imageChanged(true),
 		_gcParametersChanged(true),

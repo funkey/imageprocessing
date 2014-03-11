@@ -4,8 +4,10 @@
 static logger::LogChannel imagestackviewlog("imagestackviewlog", "[ImageStackView] ");
 
 ImageStackView::ImageStackView(unsigned int numImages, double gap, bool showColored) :
-	_painter(boost::make_shared<ImageStackPainter>(numImages, gap, showColored)),
-	_section(boost::make_shared<int>(0)) {
+	_painter(new ImageStackPainter(numImages, gap, showColored)),
+	_section(new int(0)),
+	_clickX(new float(0)),
+	_clickY(new float(0)) {
 
 	registerInput(_stack, "imagestack");
 	registerOutput(_painter, "painter");
@@ -54,7 +56,10 @@ ImageStackView::updateOutputs() {
 		return;
 
 	// prepare current image data
-	_currentImage->reshape(_stack->width(), _stack->height());
+	if (!_currentImage)
+		_currentImage = new Image(_stack->width(), _stack->height());
+	else
+		_currentImage->reshape(_stack->width(), _stack->height());
 
 	// copy current image data
 	*_currentImage = *(*_stack)[*_section];
