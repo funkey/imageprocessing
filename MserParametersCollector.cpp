@@ -18,24 +18,24 @@ ParametersCollector::updateOutputs() {
 	if (!_parameters)
 		_parameters = new MserParameters();
 
-	if (_delta)
+	if (_delta.isSet())
 		_parameters->delta        = (int)*_delta;
 
-	if (_minArea)
+	if (_minArea.isSet())
 		_parameters->minArea      = (int)*_minArea;
 
-	if (_maxArea)
+	if (_maxArea.isSet())
 		_parameters->maxArea      = (int)*_maxArea;
 
-	if (_maxVariation)
+	if (_maxVariation.isSet())
 		_parameters->maxVariation = *_maxVariation;
 
-	if (_minDiversity)
+	if (_minDiversity.isSet())
 		_parameters->minDiversity = *_minDiversity;
 
-	if (_darkToBright)
+	if (_darkToBright.isSet())
 		_parameters->darkToBright = *_darkToBright;
 
-	if (_brightToDark)
+	if (_brightToDark.isSet())
 		_parameters->brightToDark = *_brightToDark;
 }
