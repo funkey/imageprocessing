@@ -42,7 +42,7 @@ ImageStackDirectoryWriter::write(std::string basename) {
 
 	LOG_DEBUG(imagestackdirectorywriterlog) << "attempting to write stack" << std::endl;
 
-	if (!_stack) {
+	if (!_stack.isSet()) {
 
 		LOG_ERROR(imagestackdirectorywriterlog) << "no input image stack set" << std::endl;
 		return false;

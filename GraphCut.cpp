@@ -18,7 +18,7 @@ GraphCut::GraphCut() :
 
 	registerInput(_image,"image");
 	registerInput(_parameters,"parameters");
-	registerInput(_pottsImage, "potts image");
+	registerInput(_pottsImage, "potts image", pipeline::Optional);
 
 	registerOutput(_segmentation, "segmentation");
 	registerOutput(_energy, "energy");
@@ -279,7 +279,7 @@ double GraphCut::getPairwiseCosts(int x1, int y1, int x2, int y2){
 	double pottsTerm    = _parameters->pottsWeight/dist;
 	double contrastTerm = 0.0;
 
-	if (_pottsImage) {
+	if (_pottsImage.isSet()) {
 
 		double g = (*_pottsImage)(x1, y1) - (*_pottsImage)(x2, y2);
 		double e = exp ( -pow(g, 2) / (2.0 * pow(_parameters->contrastSigma, 2)));

@@ -18,26 +18,26 @@ ColorImageWriter::ColorImageWriter(std::string filename) :
 void
 ColorImageWriter::write(std::string filename) {
 
+	LOG_DEBUG(colorimagewriterlog) << "requesting image update" << std::endl;
+
 	updateInputs();
+
+	if (!_r.isSet() || !_g.isSet() || !_b.isSet()) {
+
+		LOG_ERROR(colorimagewriterlog) << "no input image set" << std::endl;
+		return;
+	}
 
 	if (filename == "")
 		filename = _filename;
 
 	LOG_DEBUG(colorimagewriterlog) << "attempting to write image" << std::endl;
 
-	if (!_r || !_g || !_b) {
-
-		LOG_ERROR(colorimagewriterlog) << "no input image set" << std::endl;
-		return;
-	}
-
 	if (_r->shape() != _g->shape() || _r->shape() != _b->shape()) {
 
 		LOG_ERROR(colorimagewriterlog) << "images are not of same size" << std::endl;
 		return;
 	}
-
-	LOG_DEBUG(colorimagewriterlog) << "requesting image update" << std::endl;
 
 	vigra::MultiArray<2, vigra::RGBValue<float> > rgbImage(_r->shape());
 

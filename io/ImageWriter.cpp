@@ -15,20 +15,20 @@ ImageWriter::ImageWriter(std::string filename) :
 void
 ImageWriter::write(std::string filename) {
 
+	LOG_DEBUG(imagewriterlog) << "requesting image update" << std::endl;
+
 	updateInputs();
 
-	if (filename == "")
-		filename = _filename;
-
-	LOG_DEBUG(imagewriterlog) << "attempting to write image" << std::endl;
-
-	if (!_image) {
+	if (!_image.isSet()) {
 
 		LOG_ERROR(imagewriterlog) << "no input image set" << std::endl;
 		return;
 	}
 
-	LOG_DEBUG(imagewriterlog) << "requesting image update" << std::endl;
+	if (filename == "")
+		filename = _filename;
+
+	LOG_DEBUG(imagewriterlog) << "attempting to write image" << std::endl;
 
 	// save to file
 	vigra::exportImage(vigra::srcImageRange(*_image), vigra::ImageExportInfo(filename.c_str()));
