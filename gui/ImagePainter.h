@@ -541,10 +541,21 @@ ImagePainter<Image, Pointer>::load(const boost::true_type&) {
 			// fire
 			//float h = ((*i) - min)/(max - min);//fmod(static_cast<float>(*i)*M_PI, 1.0);
 
-			float h = fmod(static_cast<float>(*i)*M_PI, 1.0);
-			float s = 0.5 + fmod(static_cast<float>(*i)*M_PI*2, 0.5);
-			float v = (*i == 0 ? 0.0 : 0.75 + fmod(static_cast<float>(*i)*M_PI*3, 0.25));
-			hsvToRgb(h, s, v, pixel[0], pixel[1], pixel[2]);
+			// intensities above one are handled as color indices
+			if (*i >= 1.0) {
+
+				float h = fmod(static_cast<float>(*i)*M_PI, 1.0);
+				float s = 0.5 + fmod(static_cast<float>(*i)*M_PI*2, 0.5);
+				float v = (*i == 0 ? 0.0 : 0.75 + fmod(static_cast<float>(*i)*M_PI*3, 0.25));
+				hsvToRgb(h, s, v, pixel[0], pixel[1], pixel[2]);
+
+			// intensities below 1 are handled as grayscale
+			} else {
+
+				pixel[0] = (*i)*255.0;
+				pixel[1] = (*i)*255.0;
+				pixel[2] = (*i)*255.0;
+			}
 			colorImage.push_back(pixel);
 		}
 
