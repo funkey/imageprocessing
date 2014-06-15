@@ -36,8 +36,17 @@ ImageReader::readImage() {
 	// allocate image
 	_image = new Image(info.width(), info.height());
 
-	// read image
-	importImage(info, vigra::destImage(*_image));
+	try {
+
+		// read image
+		importImage(info, vigra::destImage(*_image));
+
+	} catch (vigra::PostconditionViolation& e) {
+
+		UTIL_THROW_EXCEPTION(
+				IOError,
+				"error reading " << _filename << ": " << e.what());
+	}
 
 	if (strcmp(info.getPixelType(), "FLOAT") == 0)
 		return;
