@@ -3,6 +3,7 @@
 #include <vigra/impex.hxx>
 
 #include <util/Logger.h>
+#include <util/exceptions.h>
 #include "ImageReader.h"
 
 logger::LogChannel imagereaderlog("imagereaderlog", "[ImageReader] ");
@@ -29,8 +30,9 @@ ImageReader::readImage() {
 	// abort if image is not grayscale
 	if (!info.isGrayscale()) {
 
-		LOG_ERROR(imagereaderlog) << _filename << " is not a gray-scale image!" << std::endl;
-		return;
+		UTIL_THROW_EXCEPTION(
+				IOError,
+				_filename << " is not a gray-scale image!");
 	}
 
 	// allocate image
