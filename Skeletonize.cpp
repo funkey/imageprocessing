@@ -79,7 +79,10 @@ Skeletonize::skeletonize(view_t& image){
 			for (i[1] = 0; i[1] < size[1]; i[1]++)
 			for (i[0] = 0; i[0] < size[0]; i[0]++) {
 
-				if (image[i] == 0)
+				// unbelievable -- on a  500x500 test image, this test is ~10% 
+				// faster then:
+				//   if (image[i] == 0)
+				if (!(image[i] > 0 || image[i] < 0))
 					continue; // current point is already background 
 
 				LOG_ALL(skeletonizelog) << "pixel " << i << " is a foreground pixel" << std::endl;
