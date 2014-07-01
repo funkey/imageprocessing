@@ -54,10 +54,14 @@ Skeletonize::prepareSkeletonImage() {
 void
 Skeletonize::skeletonize(view_t& image){
 
-	std::vector<vigra::Shape3> simpleBorderPoints;
-
 	// the size of the image
 	vigra::Shape3 size = image.shape();
+
+	// index to run over all pixels
+	vigra::Shape3 i;
+
+	// do we have a volumetric image?
+	_isVolume = (size[2] > 1);
 
 	// 3x3x3 neighborhood patch
 	vigra::MultiArray<3, int> patch(vigra::Shape3(3));
@@ -66,21 +70,21 @@ Skeletonize::skeletonize(view_t& image){
 	int unchangedBorders = 0;
 	while (unchangedBorders < 6) { // loop until no change for all the six border types
 
-		LOG_ALL(skeletonizelog) << "dilating image" << std::endl;
-
 		unchangedBorders = 0;
-		for (int currentBorder = 1; currentBorder <= 6; currentBorder++) {
 
-			LOG_ALL(skeletonizelog) << "considering border " << currentBorder << std::endl;
+		LOG_ALL(skeletonizelog) << "eroding image" << std::endl;
 
-			// Loop through the image.
-			vigra::Shape3 i;
+		for (_currentBorder = 1; _currentBorder <= 6; _currentBorder++) {
+
+			LOG_ALL(skeletonizelog) << "considering border " << _currentBorder << std::endl;
+
+			// iterate over all pixels
 			for (i[2] = 0; i[2] < size[2]; i[2]++)
 			for (i[1] = 0; i[1] < size[1]; i[1]++)
 			for (i[0] = 0; i[0] < size[0]; i[0]++) {
 
 				// unbelievable -- on a  500x500 test image, this test is ~10% 
-				// faster then:
+				// faster than:
 				//   if (image[i] == 0)
 				if (!(image[i] > 0 || image[i] < 0))
 					continue; // current point is already background 
@@ -90,100 +94,121 @@ Skeletonize::skeletonize(view_t& image){
 				// get the 3x3x3 patch around i
 				getPatch(image, i, patch);
 
-				// check 6-neighbors if point is a border point of type 
-				// currentBorder
-				bool isBorderPoint = false;
-				if      (currentBorder == 1 && patch[N] == 0)
-					isBorderPoint = true;
-				else if (currentBorder == 2 && patch[S] == 0)
-					isBorderPoint = true;
-				else if (currentBorder == 3 && patch[E] == 0)
-					isBorderPoint = true;
-				else if (currentBorder == 4 && patch[W] == 0)
-					isBorderPoint = true;
-				// don't consider pixels of a 2D image as border pixels in the z 
-				// directions
-				else if (size[2] > 1) {
+				if (canBeDeleted(patch)) {
 
-					if      (currentBorder == 5 && patch[U] == 0)
-						isBorderPoint = true;
-					else if (currentBorder == 6 && patch[B] == 0)
-						isBorderPoint = true;
-				}
+					LOG_ALL(skeletonizelog) << "this pixel can be deleted -- storing in simple border points" << std::endl;
 
-				if (!isBorderPoint) {
-
-					LOG_ALL(skeletonizelog) << "this pixel is not of border type " << currentBorder << std::endl;
-					continue; // current point is not deletable
-				}
-
-				LOG_ALL(skeletonizelog) << "this pixel is of border type " << currentBorder << std::endl;
-
-				// check if point is the end of an arc
-				int numberOfNeighbors = -1; // -1 and not 0 because the center pixel will be counted as well	
-				for (view_t::iterator j = patch.begin(); j != patch.end(); j++)
-					numberOfNeighbors += (*j == 0 ? 0 : 1);
-
-				if (numberOfNeighbors == 1) {
-
-					LOG_ALL(skeletonizelog) << "this pixel is the end of an arch" << std::endl;
-					continue; // current point is not deletable
-				}
-
-				// check if point is Euler invariant
-				if (!isEulerInvariant(patch)) {
-
-					LOG_ALL(skeletonizelog) << "this pixel is not Euler invariant" << std::endl;
-					continue; // current point is not deletable
-				}
-
-				// check if point is simple (deletion does not change connectivity in the 3x3x3 neighborhood)
-				if (!isSimplePoint(patch)) {
-
-					LOG_ALL(skeletonizelog) << "this pixel is not a simple point" << std::endl;
-					continue; // current point is not deletable
-				}
-
-				LOG_ALL(skeletonizelog) << "this pixel can be deleted -- storing in simple border points" << std::endl;
-
-				// add all simple border points to a list for sequential re-checking
-				simpleBorderPoints.push_back(i);
-
-			} // end image iteration loop
-
-			// sequential re-checking to preserve connectivity when
-			// deleting in a parallel way
-
-			bool noChange = true;
-			std::vector<vigra::Shape3>::iterator j;
-			for (j = simpleBorderPoints.begin(); j != simpleBorderPoints.end(); j++) {
-
-				LOG_ALL(skeletonizelog) << "attempting to delete point " << *j << std::endl;
-
-				// Check if neighborhood would still be connected
-				getPatch(image, *j, patch);
-				if (isSimplePoint(patch)) {
-
-					// we can delete current point
-					image[*j] = 0;
-					noChange = false;
-
-					LOG_ALL(skeletonizelog) << "deleted!" << std::endl;
-
-				} else {
-
-					LOG_ALL(skeletonizelog) << "not a simple point anymore" << std::endl;
+					// add all simple border points to a list for sequential re-checking
+					markAsSimpleBorderPoint(i);
 				}
 			}
 
-			if (noChange)
+			if (deleteSimpleBorderPoints(image) == 0)
 				unchangedBorders++;
-
-			simpleBorderPoints.clear();
 
 		} // end currentBorder for loop
 
 	} // end unchangedBorders while loop
+}
+
+bool
+Skeletonize::canBeDeleted(const view_t& patch) {
+
+	if (!isBorder(patch))
+		return false;
+
+	if (isArchEnd(patch))
+		return false;
+
+	if (!isEulerInvariant(patch))
+		return false;
+
+	if (!isSimplePoint(patch))
+		return false;
+
+	return true;
+}
+
+bool
+Skeletonize::isBorder(const view_t& patch) {
+
+	// check 6-neighbors if point is a border point of type 
+	// currentBorder
+	bool isBorderPoint = false;
+	if      (_currentBorder == 1 && patch[N] == 0)
+		isBorderPoint = true;
+	else if (_currentBorder == 2 && patch[S] == 0)
+		isBorderPoint = true;
+	else if (_currentBorder == 3 && patch[E] == 0)
+		isBorderPoint = true;
+	else if (_currentBorder == 4 && patch[W] == 0)
+		isBorderPoint = true;
+	// don't consider pixels of a 2D image as border pixels in the z 
+	// directions
+	else if (_isVolume) {
+
+		if      (_currentBorder == 5 && patch[U] == 0)
+			isBorderPoint = true;
+		else if (_currentBorder == 6 && patch[B] == 0)
+			isBorderPoint = true;
+	}
+
+	return isBorderPoint;
+}
+
+bool
+Skeletonize::isArchEnd(const view_t& patch) {
+
+	// check if point is the end of an arc
+	int numberOfNeighbors = -1; // -1 and not 0 because the center pixel will be counted as well	
+	for (view_t::iterator j = patch.begin(); j != patch.end(); j++)
+		numberOfNeighbors += (*j == 0 ? 0 : 1);
+
+	if (numberOfNeighbors == 1) {
+
+		LOG_ALL(skeletonizelog) << "this pixel is the end of an arch" << std::endl;
+		return true;
+	}
+
+	return false;
+}
+
+void
+Skeletonize::markAsSimpleBorderPoint(const vigra::Shape3& i) {
+
+	_simpleBorderPoints.push_back(i);
+}
+
+unsigned int
+Skeletonize::deleteSimpleBorderPoints(view_t& image) {
+
+	vigra::MultiArray<3, int> patch(vigra::Shape3(3));
+	unsigned int deleted = 0;
+
+	std::vector<vigra::Shape3>::iterator j;
+	for (j = _simpleBorderPoints.begin(); j != _simpleBorderPoints.end(); j++) {
+
+		LOG_ALL(skeletonizelog) << "attempting to delete point " << *j << std::endl;
+
+		// Check if neighborhood would still be connected
+		getPatch(image, *j, patch);
+		if (isSimplePoint(patch)) {
+
+			// we can delete current point
+			image[*j] = 0;
+			deleted++;
+
+			LOG_ALL(skeletonizelog) << "deleted!" << std::endl;
+
+		} else {
+
+			LOG_ALL(skeletonizelog) << "not a simple point anymore" << std::endl;
+		}
+	}
+
+	_simpleBorderPoints.clear();
+
+	return deleted;
 }
 
 void
@@ -478,10 +503,15 @@ Skeletonize::isEulerInvariant(const view_t& patch){
 
 	eulerCharacteristic += _lut[n];
 
-	if (eulerCharacteristic == 0)
+	if (eulerCharacteristic == 0) {
+
 		return true;
-	else
+
+	} else {
+
+		LOG_ALL(skeletonizelog) << "this pixel is not Euler invariant" << std::endl;
 		return false;
+	}
 }
 
 bool
@@ -553,8 +583,11 @@ Skeletonize::isSimplePoint(const view_t& patch){
 
 			label++;
 
-			if (label - 2 >= 2)
+			if (label - 2 >= 2) {
+
+				LOG_ALL(skeletonizelog) << "this pixel is not a simple point" << std::endl;
 				return false;
+			}
 		}
 	}
 

@@ -16,16 +16,62 @@ private:
 
 	void updateOutputs();
 
+	/**
+	 * Copy the input image in an intermediate data structure to find the 
+	 * skeleton.
+	 */
 	void prepareSkeletonImage();
 
+	/**
+	 * Iteratively erode the skeleton image.
+	 */
 	void skeletonize(view_t& image);
 
-	void createEulerLut();
+	/**
+	 * Check, whether a foreground pixel (described by the patch around it) can 
+	 * be deleted.
+	 */
+	bool canBeDeleted(const view_t& patch);
 
+	/**
+	 * Is the pixel centered in patch on a boundary?
+	 */
+	bool isBorder(const view_t& patch);
+
+	/**
+	 * Is the pixel centered in patch the end of an arch?
+	 */
+	bool isArchEnd(const view_t& patch);
+
+	/**
+	 * Is the pixel centered in patch Euler invariant?
+	 */
 	bool isEulerInvariant(const view_t& patch);
 
+	/**
+	 * Is the pixel centered in patch simple, i.e., would deleting it create 
+	 * disconnected components?
+	 */
 	bool isSimplePoint(const view_t& patch);
 
+	/**
+	 * Mark a location as a simple border point that can be deleted.
+	 */
+	void markAsSimpleBorderPoint(const vigra::Shape3& i);
+
+	/**
+	 * Delete simple border points that were marked as "can be deleted" earlier.
+	 */
+	unsigned int deleteSimpleBorderPoints(view_t& image);
+
+	/**
+	 * Fill the look-up-table for fast Euler invariance test.
+	 */
+	void createEulerLut();
+
+	/**
+	 * Fill a 3x3x3 patch with a subarray from image centered around location.
+	 */
 	template <typename PatchType>
 	void getPatch(view_t& image, vigra::Shape3 location, PatchType& patch) {
 
@@ -39,6 +85,7 @@ private:
 
 			patch = patchView;
 
+		// border cases: fill with zero
 		} else {
 
 			patch = 0;
@@ -67,6 +114,13 @@ private:
 
 	// Euler look-up-table
 	int _lut[256];
+
+	// is the image volumetric?
+	bool _isVolume;
+
+	int _currentBorder;
+
+	std::vector<vigra::Shape3> _simpleBorderPoints;
 };
 
 #endif // IMAGEPROCESSING_SKELETONIZE_H__
