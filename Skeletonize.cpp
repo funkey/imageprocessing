@@ -93,21 +93,21 @@ Skeletonize::skeletonize(view_t& image){
 				// check 6-neighbors if point is a border point of type 
 				// currentBorder
 				bool isBorderPoint = false;
-				if (currentBorder == 1 && patch[N] <= 0)
+				if      (currentBorder == 1 && patch[N] == 0)
 					isBorderPoint = true;
-				else if (currentBorder == 2 && patch[S] <= 0)
+				else if (currentBorder == 2 && patch[S] == 0)
 					isBorderPoint = true;
-				else if (currentBorder == 3 && patch[E] <= 0)
+				else if (currentBorder == 3 && patch[E] == 0)
 					isBorderPoint = true;
-				else if (currentBorder == 4 && patch[W] <= 0)
+				else if (currentBorder == 4 && patch[W] == 0)
 					isBorderPoint = true;
 				// don't consider pixels of a 2D image as border pixels in the z 
 				// directions
 				else if (size[2] > 1) {
 
-					if (currentBorder == 5 && patch[U] <= 0)
+					if      (currentBorder == 5 && patch[U] == 0)
 						isBorderPoint = true;
-					else if (currentBorder == 6 && patch[B] <= 0)
+					else if (currentBorder == 6 && patch[B] == 0)
 						isBorderPoint = true;
 				}
 
