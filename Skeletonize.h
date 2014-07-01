@@ -115,6 +115,9 @@ private:
 	// Euler look-up-table
 	int _lut[256];
 
+	// copy patch for labeling
+	int _cube[26];
+
 	// is the image volumetric?
 	bool _isVolume;
 
