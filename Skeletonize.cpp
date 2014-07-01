@@ -79,8 +79,7 @@ Skeletonize::skeletonize(view_t& image){
 			for (i[1] = 0; i[1] < size[1]; i[1]++)
 			for (i[0] = 0; i[0] < size[0]; i[0]++) {
 
-				// check if point is foreground
-				if (image[i] != 1)
+				if (image[i] == 0)
 					continue; // current point is already background 
 
 				LOG_ALL(skeletonizelog) << "pixel " << i << " is a foreground pixel" << std::endl;
@@ -120,7 +119,7 @@ Skeletonize::skeletonize(view_t& image){
 				// check if point is the end of an arc
 				int numberOfNeighbors = -1; // -1 and not 0 because the center pixel will be counted as well	
 				for (view_t::iterator j = patch.begin(); j != patch.end(); j++)
-					numberOfNeighbors += *j;
+					numberOfNeighbors += (*j == 0 ? 0 : 1);
 
 				if (numberOfNeighbors == 1) {
 
@@ -169,9 +168,6 @@ Skeletonize::skeletonize(view_t& image){
 					LOG_ALL(skeletonizelog) << "deleted!" << std::endl;
 
 				} else {
-
-					// we cannot delete current point
-					image[*j] = 1;
 
 					LOG_ALL(skeletonizelog) << "not a simple point anymore" << std::endl;
 				}
@@ -329,152 +325,152 @@ Skeletonize::isEulerInvariant(const view_t& patch){
 
 	// Octant SWU
 	n = 1;
-	if (patch(0, 2, 2)==1)
+	if (patch(0, 2, 2) != 0)
 		n |= 128;
-	if (patch(1, 2, 2)==1)
+	if (patch(1, 2, 2) != 0)
 		n |=  64;
-	if (patch(0, 2, 1)==1)
+	if (patch(0, 2, 1) != 0)
 		n |=  32;
-	if (patch(1, 2, 1)==1)
+	if (patch(1, 2, 1) != 0)
 		n |=  16;
-	if (patch(0, 1, 2)==1)
+	if (patch(0, 1, 2) != 0)
 		n |=   8;
-	if (patch(1, 1, 2)==1)
+	if (patch(1, 1, 2) != 0)
 		n |=   4;
-	if (patch(0, 1, 1)==1)
+	if (patch(0, 1, 1) != 0)
 		n |=   2;
 
 	eulerCharacteristic += _lut[n];
 
 	// Octant SEU
 	n = 1;
-	if (patch(2, 2, 2)==1)
+	if (patch(2, 2, 2) != 0)
 		n |= 128;
-	if (patch(2, 1, 2)==1)
+	if (patch(2, 1, 2) != 0)
 		n |=  64;
-	if (patch(2, 2, 1)==1)
+	if (patch(2, 2, 1) != 0)
 		n |=  32;
-	if (patch(2, 1, 1)==1)
+	if (patch(2, 1, 1) != 0)
 		n |=  16;
-	if (patch(1, 2, 2)==1)
+	if (patch(1, 2, 2) != 0)
 		n |=   8;
-	if (patch(1, 1, 2)==1)
+	if (patch(1, 1, 2) != 0)
 		n |=   4;
-	if (patch(1, 2, 1)==1)
+	if (patch(1, 2, 1) != 0)
 		n |=   2;
 
 	eulerCharacteristic += _lut[n];
 
 	// Octant NWU
 	n = 1;
-	if (patch(0, 0, 2)==1)
+	if (patch(0, 0, 2) != 0)
 		n |= 128;
-	if (patch(0, 1, 2)==1)
+	if (patch(0, 1, 2) != 0)
 		n |=  64;
-	if (patch(0, 0, 1)==1)
+	if (patch(0, 0, 1) != 0)
 		n |=  32;
-	if (patch(0, 1, 1)==1)
+	if (patch(0, 1, 1) != 0)
 		n |=  16;
-	if (patch(1, 0, 2)==1)
+	if (patch(1, 0, 2) != 0)
 		n |=   8;
-	if (patch(1, 1, 2)==1)
+	if (patch(1, 1, 2) != 0)
 		n |=   4;
-	if (patch(1, 0, 1)==1)
+	if (patch(1, 0, 1) != 0)
 		n |=   2;
 
 	eulerCharacteristic += _lut[n];
 
 	// Octant NEU
 	n = 1;
-	if (patch(2, 0, 2)==1)
+	if (patch(2, 0, 2) != 0)
 		n |= 128;
-	if (patch(2, 1, 2)==1)
+	if (patch(2, 1, 2) != 0)
 		n |=  64;
-	if (patch(1, 0, 2)==1)
+	if (patch(1, 0, 2) != 0)
 		n |=  32;
-	if (patch(1, 1, 2)==1)
+	if (patch(1, 1, 2) != 0)
 		n |=  16;
-	if (patch(2, 0, 1)==1)
+	if (patch(2, 0, 1) != 0)
 		n |=   8;
-	if (patch(2, 1, 1)==1)
+	if (patch(2, 1, 1) != 0)
 		n |=   4;
-	if (patch(1, 0, 1)==1)
+	if (patch(1, 0, 1) != 0)
 		n |=   2;
 
 	eulerCharacteristic += _lut[n];
 
 	// Octant SWB
 	n = 1;
-	if (patch(0, 2, 0)==1)
+	if (patch(0, 2, 0) != 0)
 		n |= 128;
-	if (patch(0, 2, 1)==1)
+	if (patch(0, 2, 1) != 0)
 		n |=  64;
-	if (patch(1, 2, 0)==1)
+	if (patch(1, 2, 0) != 0)
 		n |=  32;
-	if (patch(1, 2, 1)==1)
+	if (patch(1, 2, 1) != 0)
 		n |=  16;
-	if (patch(0, 1, 0)==1)
+	if (patch(0, 1, 0) != 0)
 		n |=   8;
-	if (patch(0, 1, 1)==1)
+	if (patch(0, 1, 1) != 0)
 		n |=   4;
-	if (patch(1, 1, 0)==1)
+	if (patch(1, 1, 0) != 0)
 		n |=   2;
 
 	eulerCharacteristic += _lut[n];
 
 	// Octant SEB
 	n = 1;
-	if (patch(2, 2, 0)==1)
+	if (patch(2, 2, 0) != 0)
 		n |= 128;
-	if (patch(1, 2, 0)==1)
+	if (patch(1, 2, 0) != 0)
 		n |=  64;
-	if (patch(2, 2, 1)==1)
+	if (patch(2, 2, 1) != 0)
 		n |=  32;
-	if (patch(1, 2, 1)==1)
+	if (patch(1, 2, 1) != 0)
 		n |=  16;
-	if (patch(2, 1, 0)==1)
+	if (patch(2, 1, 0) != 0)
 		n |=   8;
-	if (patch(1, 1, 0)==1)
+	if (patch(1, 1, 0) != 0)
 		n |=   4;
-	if (patch(2, 1, 1)==1)
+	if (patch(2, 1, 1) != 0)
 		n |=   2;
 
 	eulerCharacteristic += _lut[n];
 
 	// Octant NWB
 	n = 1;
-	if (patch(0, 0, 0)==1)
+	if (patch(0, 0, 0) != 0)
 		n |= 128;
-	if (patch(0, 0, 1)==1)
+	if (patch(0, 0, 1) != 0)
 		n |=  64;
-	if (patch(0, 1, 0)==1)
+	if (patch(0, 1, 0) != 0)
 		n |=  32;
-	if (patch(0, 1, 1)==1)
+	if (patch(0, 1, 1) != 0)
 		n |=  16;
-	if (patch(1, 0, 0)==1)
+	if (patch(1, 0, 0) != 0)
 		n |=   8;
-	if (patch(1, 0, 1)==1)
+	if (patch(1, 0, 1) != 0)
 		n |=   4;
-	if (patch(1, 1, 0)==1)
+	if (patch(1, 1, 0) != 0)
 		n |=   2;
 
 	eulerCharacteristic += _lut[n];
 
 	// Octant NEB
 	n = 1;
-	if (patch(2, 0, 0)==1)
+	if (patch(2, 0, 0) != 0)
 		n |= 128;
-	if (patch(1, 0, 0)==1)
+	if (patch(1, 0, 0) != 0)
 		n |=  64;
-	if (patch(2, 0, 1)==1)
+	if (patch(2, 0, 1) != 0)
 		n |=  32;
-	if (patch(1, 0, 1)==1)
+	if (patch(1, 0, 1) != 0)
 		n |=  16;
-	if (patch(2, 1, 0)==1)
+	if (patch(2, 1, 0) != 0)
 		n |=   8;
-	if (patch(1, 1, 0)==1)
+	if (patch(1, 1, 0) != 0)
 		n |=   4;
-	if (patch(2, 1, 1)==1)
+	if (patch(2, 1, 1) != 0)
 		n |=   2;
 
 	eulerCharacteristic += _lut[n];
@@ -492,10 +488,10 @@ Skeletonize::isSimplePoint(const view_t& patch){
 	int cube[26];
 
 	for (int i = 0; i < 13; i++) // i =  0..12 -> cube[0..12]
-		cube[i] = patch[i];
+		cube[i] = (patch[i] == 0 ? 0 : 1);
 	// i != 13 : ignore center pixel when counting (see [Lee94])
 	for(int i = 14; i < 27; i++) // i = 14..26 -> cube[13..25]
-		cube[i-1] = patch[i];
+		cube[i-1] = (patch[i] == 0 ? 0 : 1);
 
 	// set initial label
 	int label = 2;
