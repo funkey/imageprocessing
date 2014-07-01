@@ -12,7 +12,7 @@ public:
 
 private:
 
-	typedef vigra::MultiArrayView<3, float> view_t;
+	typedef vigra::MultiArrayView<3, int> view_t;
 
 	void updateOutputs();
 

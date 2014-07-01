@@ -27,7 +27,7 @@ Skeletonize::updateOutputs() {
 
 	prepareSkeletonImage();
 
-	vigra::MultiArray<3, float> dummy(vigra::Shape3(_image->width(), _image->height(), 1));
+	vigra::MultiArray<3, int> dummy(vigra::Shape3(_image->width(), _image->height(), 1));
 
 	std::copy(_image->begin(), _image->end(), dummy.begin());
 
@@ -60,7 +60,7 @@ Skeletonize::skeletonize(view_t& image){
 	vigra::Shape3 size = image.shape();
 
 	// 3x3x3 neighborhood patch
-	vigra::MultiArray<3, float> patch(vigra::Shape3(3));
+	vigra::MultiArray<3, int> patch(vigra::Shape3(3));
 
 	// Loop through the image several times until there is no change.
 	int unchangedBorders = 0;
