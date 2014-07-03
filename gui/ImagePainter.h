@@ -315,10 +315,10 @@ ImagePainter<Image, Pointer>::draw(
 		glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR);
 	}
 	glBegin(GL_QUADS);
-	glTexCoord2d(0.0, 0.0); glVertex2d(0.0,   0.0); 
-	glTexCoord2d(1.0, 0.0); glVertex2d(width, 0.0); 
-	glTexCoord2d(1.0, 1.0); glVertex2d(width, height); 
 	glTexCoord2d(0.0, 1.0); glVertex2d(0.0,   height); 
+	glTexCoord2d(1.0, 1.0); glVertex2d(width, height); 
+	glTexCoord2d(1.0, 0.0); glVertex2d(width, 0.0); 
+	glTexCoord2d(0.0, 0.0); glVertex2d(0.0,   0.0); 
 	glEnd();
 	if (_transparent)
 		glDisable(GL_BLEND);
