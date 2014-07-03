@@ -2,7 +2,7 @@
 #define IMAGEPROCESSING_SKELETONIZE_H__
 
 #include <pipeline/SimpleProcessNode.h>
-#include "Image.h"
+#include "ImageStack.h"
 
 class Skeletonize : public pipeline::SimpleProcessNode<> {
 
@@ -101,8 +101,8 @@ private:
 	 */
 	void labelComponentsAfterRemoval(int octant, int label, int* cube);
 
-	pipeline::Input<Image>  _image;
-	pipeline::Output<Image> _skeleton;
+	pipeline::Input<ImageStack>  _stack;
+	pipeline::Output<ImageStack> _skeleton;
 
 	// 3D offsets
 	vigra::Shape3 N; // north

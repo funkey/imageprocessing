@@ -16,7 +16,7 @@ Skeletonize::Skeletonize() :
 		U(1, 1, 2),
 		B(1, 1, 0) {
 
-	registerInput(_image, "image");
+	registerInput(_stack, "image stack");
 	registerOutput(_skeleton, "skeleton");
 
 	createEulerLut();
@@ -25,30 +25,52 @@ Skeletonize::Skeletonize() :
 void
 Skeletonize::updateOutputs() {
 
-	prepareSkeletonImage();
+	unsigned int width  = _stack->width();
+	unsigned int height = _stack->height();
+	unsigned int depth  = _stack->size();
 
-	vigra::MultiArray<3, int> dummy(vigra::Shape3(_image->width(), _image->height(), 1));
+	vigra::MultiArray<3, int> volume(vigra::Shape3(width, height, depth));
 
-	std::copy(_image->begin(), _image->end(), dummy.begin());
+	// fill volume image by image
+	for (unsigned int i = 0; i < depth; i++)
+		vigra::copyMultiArray(
+				*(*_stack)[i],
+				volume.bind<2>(i));
 
 	{
 		boost::timer::auto_cpu_timer t;
 
-		//skeletonize(*_skeleton); // _skeleton is a 2D image, at the moment
-		skeletonize(dummy);
+		skeletonize(volume);
 	}
 
-	std::copy(dummy.begin(), dummy.end(), _skeleton->begin());
-}
+	LOG_USER(skeletonizelog) << "preparing output image stack" << std::endl;
 
+	prepareSkeletonImage();
+
+	LOG_USER(skeletonizelog) << "copy skeletons" << std::endl;
+
+	// read back output stack
+	for (unsigned int i = 0; i < depth; i++)
+		vigra::copyMultiArray(
+				volume.bind<2>(i),
+				*(*_skeleton)[i]);
+
+	LOG_USER(skeletonizelog) << "done" << std::endl;
+}
 
 void
 Skeletonize::prepareSkeletonImage() {
 
-	if (!_skeleton || _skeleton->width() != _image->width() || _skeleton->height() != _image->height())
-		_skeleton = new Image(_image->width(), _image->height());
+	if (!_skeleton                               ||
+		 _skeleton->width()  != _stack->width()  ||
+		 _skeleton->height() != _stack->height() ||
+		 _skeleton->size()   != _stack->size()) {
 
-	std::copy(_image->begin(), _image->end(), _skeleton->begin());
+		_skeleton = new ImageStack();
+
+		for (unsigned int i = 0; i < _stack->size(); i++)
+			_skeleton->add(boost::make_shared<Image>(_stack->width(), _stack->height()));
+	}
 }
 
 void
