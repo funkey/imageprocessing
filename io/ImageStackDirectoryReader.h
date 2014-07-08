@@ -27,6 +27,8 @@ private:
 
 		StackAssembler();
 
+		void setResolution(float x, float y, float z) { _resX = x; _resY = y; _resZ = z; }
+
 	private:
 
 		void updateOutputs();
@@ -34,7 +36,13 @@ private:
 		pipeline::Inputs<Image> _images;
 
 		pipeline::Output<ImageStack> _stack;
+
+		float _resX;
+		float _resY;
+		float _resZ;
 	};
+
+	void processMetaData(boost::filesystem::path file);
 
 	boost::shared_ptr<StackAssembler> _stackAssembler;
 
