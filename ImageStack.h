@@ -2,9 +2,10 @@
 #define IMAGEPROCESSING_IMAGE_STACK_H__
 
 #include <pipeline/all.h>
-#include <imageprocessing/Image.h>
+#include "Image.h"
+#include "Volume.h"
 
-class ImageStack : public pipeline::Data {
+class ImageStack : public pipeline::Data, public Volume {
 
 	// Image objects are shared between ImageStack
 	typedef std::vector<boost::shared_ptr<Image> > sections_type;
@@ -51,7 +52,6 @@ public:
 private:
 
 	sections_type _sections;
-
 };
 
 #endif // IMAGEPROCESSING_IMAGE_STACK_H__
