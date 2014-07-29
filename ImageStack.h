@@ -12,6 +12,8 @@ class ImageStack : public pipeline::Data, public Volume {
 
 public:
 
+	typedef Image::value_type               value_type;
+
 	typedef sections_type::iterator         iterator;
 
 	typedef sections_type::const_iterator   const_iterator;
