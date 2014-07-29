@@ -18,15 +18,15 @@ public:
 
 	void setResolution(float resX, float resY, float resZ) { _resX = resX; _resY = resY; _resZ = resZ; }
 
-	float getResolutionX() { return _resX; }
-	float getResolutionY() { return _resY; }
-	float getResolutionZ() { return _resZ; }
+	float getResolutionX() const { return _resX; }
+	float getResolutionY() const { return _resY; }
+	float getResolutionZ() const { return _resZ; }
 
 	void setOffset(float minX, float minY, float minZ) { _minX = minX; _minY = minY; _minZ = minZ; }
 
-	float getOffsetX() { return _minX; }
-	float getOffsetY() { return _minY; }
-	float getOffsetZ() { return _minZ; }
+	float getOffsetX() const { return _minX; }
+	float getOffsetY() const { return _minY; }
+	float getOffsetZ() const { return _minZ; }
 
 private:
 
