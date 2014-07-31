@@ -112,6 +112,27 @@ ImageStackView::onButtonDown(gui::MouseDown& signal) {
 		setDirty(_clickX);
 		setDirty(_clickY);
 	}
+
+	if (!_painter->getSize().contains(signal.position))
+		return;
+
+	if (signal.button == gui::buttons::WheelUp && signal.modifiers == 0) {
+
+		*_section = std::min((int)_stack->size() - 1, *_section + 1);
+
+		setDirty(_painter);
+		setDirty(_currentImage);
+		setDirty(_section);
+	}
+
+	if (signal.button == gui::buttons::WheelDown && signal.modifiers == 0) {
+
+		*_section = std::max(0, *_section - 1);
+
+		setDirty(_painter);
+		setDirty(_currentImage);
+		setDirty(_section);
+	}
 }
 
 void
