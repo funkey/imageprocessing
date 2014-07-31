@@ -16,7 +16,7 @@ ImageStackPainter::ImageStackPainter(unsigned int numImages, double gap, bool sh
 void
 ImageStackPainter::setImageStack(boost::shared_ptr<ImageStack> stack) {
 
-	LOG_DEBUG(imagestackpainterlog) << "got a new stack" << std::endl;
+	LOG_ALL(imagestackpainterlog) << "got a new stack" << std::endl;
 
 	_stack = stack;
 
@@ -73,7 +73,7 @@ ImageStackPainter::setCurrentSection(unsigned int section) {
 
 	setSize(size);
 
-	LOG_DEBUG(imagestackpainterlog) << "current section set to " << _section << std::endl;
+	LOG_ALL(imagestackpainterlog) << "current section set to " << _section << std::endl;
 }
 
 bool
