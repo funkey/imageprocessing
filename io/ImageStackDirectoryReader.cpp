@@ -103,4 +103,8 @@ ImageStackDirectoryReader::StackAssembler::updateOutputs() {
 		_stack->add(image);
 
 	_stack->setResolution(_resX, _resY, _resZ);
+	_stack->setBoundingBox(
+			BoundingBox(
+					0, 0, 0,
+					_stack->width()*_resX, _stack->height()*_resY, _images.size()*_resZ));
 }

@@ -17,6 +17,10 @@ SubStackSelector::updateOutputs() {
 		_subStack = new ImageStack();
 
 	_subStack->clear();
+	_subStack->setResolution(
+			_stack->getResolutionX(),
+			_stack->getResolutionY(),
+			_stack->getResolutionZ());
 
 	LOG_ALL(substackselectorlog)
 			<< "selecting substack from stack of size "

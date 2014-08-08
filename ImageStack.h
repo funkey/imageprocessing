@@ -3,9 +3,9 @@
 
 #include <pipeline/all.h>
 #include "Image.h"
-#include "Volume.h"
+#include "DiscreteVolume.h"
 
-class ImageStack : public pipeline::Data, public Volume {
+class ImageStack : public pipeline::Data, public DiscreteVolume {
 
 	// Image objects are shared between ImageStack
 	typedef std::vector<boost::shared_ptr<Image> > sections_type;

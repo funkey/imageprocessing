@@ -12,17 +12,15 @@ public:
 	ImageStackVolumeAdaptor(const ImageStack& stack) :
 		_stack(stack) {}
 
-	float width()  const { return _stack.width() *_stack.getResolutionX(); }
-	float height() const { return _stack.height()*_stack.getResolutionY(); }
-	float depth()  const { return _stack.size()  *_stack.getResolutionZ(); }
+	const BoundingBox& getBoundingBox() const { return _stack.getBoundingBox(); }
 
 	float operator()(float x, float y, float z) const {
 
-		unsigned int section = z/_stack.getResolutionZ();
-		unsigned int dx = x/_stack.getResolutionX();
-		unsigned int dy = y/_stack.getResolutionY();
+		unsigned int dx, dy, dz;
 
-		return (*_stack[section])(dx, dy);
+		_stack.getDiscreteCoordinates(x, y, z, dx, dy, dz);
+
+		return (*_stack[dz])(dx, dy);
 	}
 
 private:
