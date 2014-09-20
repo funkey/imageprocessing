@@ -12,7 +12,8 @@ struct MserParameters : public pipeline::Data {
 		minDiversity(0.0),
 		darkToBright(true),
 		brightToDark(false),
-		sameIntensityComponents(false) {}
+		sameIntensityComponents(false),
+		alwaysStable(false) {}
 
 	// increase of the intensity level to check for stability
 	int delta;
@@ -35,6 +36,9 @@ struct MserParameters : public pipeline::Data {
 
 	// extract only components of same intensity
 	bool sameIntensityComponents;
+
+	// every found region is considered stable
+	bool alwaysStable;
 };
 
 #endif // IMAGEPROCESSING_MSER_PARAMETERS_H__

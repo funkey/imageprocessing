@@ -194,6 +194,9 @@ Region::isStable() {
 		return false;
 	}
 
+	if (_parameters->alwaysStable)
+		return true;
+
 	if (_history == 0) {
 
 		LOG_ALL(mserregionlog) << "[Region] I am unstable (I have no history)" << std::endl;
