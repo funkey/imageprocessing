@@ -99,6 +99,21 @@ private:
 	void pushBoundaryLocation(const point_type& location, Precision level);
 
 	/**
+	 * Get the next open boundary location with the given level. Returns false 
+	 * if there is none.
+	 *
+	 * @param level
+	 *              The reference level.
+	 *
+	 * @param boundaryLocation
+	 *              [out] The next boundary location with level smaller then 
+	 *              level.
+	 */
+	bool popBoundaryLocation(
+			Precision   level,
+			point_type& boundaryLocation);
+
+	/**
 	 * Get the next open boundary location that has a level smaller than the 
 	 * given level.
 	 *
@@ -115,9 +130,9 @@ private:
 	 * @return true, if there is such a boundary location
 	 */
 	bool popLowerBoundaryLocation(
-			Precision   level,
-			point_type& boundaryLocation,
-			Precision&  boundaryLevel);
+			unsigned int level, // not Precision, we have to pass MaxValue + 1
+			point_type&  boundaryLocation,
+			Precision&   boundaryLevel);
 
 	/**
 	 * Get the next open boundary location that has a level higher than the 
@@ -156,6 +171,13 @@ private:
 	void endComponent(Precision level, Visitor& visitor);
 
 	/**
+	 * Find the next neighbor of the current position that has not been visited 
+	 * or been proposed by this method earlier. Returns false if there are no 
+	 * valid neighbors anymore.
+	 */
+	bool findNextNeighbor(point_type& neighborLocation, Precision& neighborLevel);
+
+	/**
 	 * Discretized the input image into the range defined by Precision.
 	 */
 	void discretizeImage(const Image& image);
@@ -171,8 +193,8 @@ private:
 	vigra::MultiArray<2, Precision> _image;
 
 	// the current location of the parsing algorithm
-	point_type _currentLocation;
-	Precision  _currentLevel;
+	point_type   _currentLocation;
+	unsigned int _currentLevel; // not Precision, since we have to be able to express MaxValue + 1
 
 	// the pixel list, shared ownership with visitors
 	boost::shared_ptr<PixelList> _pixelList;
@@ -187,16 +209,42 @@ private:
 	// stack of component begin iterators (with the level they have been 
 	// generated for)
 	std::stack<std::pair<Precision, PixelList::iterator> > _componentBegins;
+
+	// visited flag for each pixel
+	vigra::MultiArray<2, bool> _visited;
+
+	typedef unsigned char Direction;
+	static const Direction Right;
+	static const Direction Down;
+	static const Direction Left;
+	static const Direction Up;
+
+	// the direction in which to walk next after visiting a pixel
+	vigra::MultiArray<2, Direction> _nextDirection;
 };
 
 template <typename Precision>
 const Precision ImageLevelParser<Precision>::MaxValue = std::numeric_limits<Precision>::max();
+template <typename Precision>
+const typename ImageLevelParser<Precision>::Direction ImageLevelParser<Precision>::Right = 0;
+template <typename Precision>
+const typename ImageLevelParser<Precision>::Direction ImageLevelParser<Precision>::Down  = 1;
+template <typename Precision>
+const typename ImageLevelParser<Precision>::Direction ImageLevelParser<Precision>::Left  = 2;
+template <typename Precision>
+const typename ImageLevelParser<Precision>::Direction ImageLevelParser<Precision>::Up    = 3;
 
 template <typename Precision>
 ImageLevelParser<Precision>::ImageLevelParser(const Image& image) :
 	_pixelList(boost::make_shared<PixelList>(image.size())),
 	_boundaryLocations(MaxValue + 1),
 	_numOpenLocations(0) {
+
+	_visited.reshape(image.shape());
+	_visited = false;
+
+	_nextDirection.reshape(image.shape());
+	_nextDirection = Right;
 
 	LOG_DEBUG(imagelevelparserlog) << "initializing for image of size " << image.size() << std::endl;
 
@@ -214,9 +262,8 @@ ImageLevelParser<Precision>::parse(Visitor& visitor) {
 	// open boundary pixels...
 	pushBoundaryLocation(point_type(0, 0), _image(0, 0));
 
-	// ...pretending we have opened a component for MaxValue already...
-	beginComponent(MaxValue);
-	_currentLevel = MaxValue;
+	// ...pretending we come from level MaxValue + 1...
+	_currentLevel = MaxValue + 1;
 
 	// ...and going to the next lower level (which is our initial pixel). This 
 	// way we make sure enough components are put on the stack.
@@ -224,7 +271,7 @@ ImageLevelParser<Precision>::parse(Visitor& visitor) {
 
 	LOG_DEBUG(imagelevelparserlog)
 			<< "starting at " << _currentLocation
-			<< " with level " << _currentLevel
+			<< " with level " << (int)_currentLevel
 			<< std::endl;
 
 	// loop through the image
@@ -271,13 +318,111 @@ ImageLevelParser<Precision>::gotoLocation(const point_type& location) {
 
 	_currentLocation = location;
 	_currentLevel    = _image(location.x, location.y);
+
+	assert(_visited(location.x, location.y) == false);
+
+	_visited(location.x, location.y) = true;
+	_pixelList->add(location);
 }
 
 template <typename Precision>
 bool
 ImageLevelParser<Precision>::fillLevel() {
 
-	// TODO
+	// we are supposed to fill all adjacent pixels of the current pixels that 
+	// have the same level
+	Precision fillLevel = _currentLevel;
+
+	LOG_ALL(imagelevelparserlog) << "filling level " << (int)fillLevel << std::endl;
+
+	point_type neighborLocation;
+	Precision  neighborLevel;
+
+	// walk around...
+	while (true) {
+
+		LOG_ALL(imagelevelparserlog) << "I am at " << _currentLocation << std::endl;
+
+		bool smallerNeighborFound = false;
+
+		// look at all neighbors
+		while (findNextNeighbor(neighborLocation, neighborLevel)) {
+
+			if (neighborLevel < fillLevel) {
+
+				LOG_ALL(imagelevelparserlog)
+						<< "neighbor is smaller (" << (int)neighborLevel
+						<< "), will go down" << std::endl;
+
+				// We found a smaller neighbor. Remember the neighbor and return 
+				// false, since we are not bounded. This will cause filling of 
+				// the lower levels.
+				pushBoundaryLocation(neighborLocation, neighborLevel);
+				smallerNeighborFound = true;
+
+			} else if (neighborLevel > fillLevel) {
+
+				LOG_ALL(imagelevelparserlog)
+						<< "neighbor is larger (" << (int)neighborLevel
+						<< "), will remember it" << std::endl;
+
+				// we found a larger neighbor -- remember it
+				pushBoundaryLocation(neighborLocation, neighborLevel);
+
+			} else {
+
+				LOG_ALL(imagelevelparserlog)
+						<< "neighbor is equal (" << (int)neighborLevel
+						<< "), will remember it" << std::endl;
+
+				// we found an equal neighbor -- remember it
+				pushBoundaryLocation(neighborLocation, neighborLevel);
+			}
+		}
+
+		// continue filling the smaller level
+		if (smallerNeighborFound)
+			return false;
+
+		// try to find the next non-visited boundary location of the current 
+		// level
+		while (true) {
+
+			point_type newLocation;
+			bool found = popBoundaryLocation(fillLevel, newLocation);
+
+			// if there aren't any other boundary locations of the current 
+			// level, we are done and bounded
+			if (!found) {
+
+				LOG_ALL(imagelevelparserlog)
+						<< "no more boundary locations for the current level"
+						<< std::endl;
+
+				return true;
+			}
+
+			LOG_ALL(imagelevelparserlog)
+					<< "found location " << newLocation
+					<< " on the boundary" << std::endl;
+
+			// continue searching, if the boundary location was not visited 
+			// already
+			if (_visited(newLocation.x, newLocation.y)) {
+
+				LOG_ALL(imagelevelparserlog) << "this location was visited already" << std::endl;
+				continue;
+			}
+
+			LOG_ALL(imagelevelparserlog) << "going to the new location" << std::endl;
+
+			// we found a not-yet-visited boundary location of the current 
+			// level -- continue filling with it
+			gotoLocation(newLocation);
+			break;
+		}
+	}
+
 	return true;
 }
 
@@ -351,6 +496,11 @@ ImageLevelParser<Precision>::gotoHigherLevel(Visitor& visitor) {
 			<< "found boundary location " << newLocation
 			<< " with level " << (int)newLevel << std::endl;
 
+	LOG_ALL(imagelevelparserlog)
+			<< "ending all components in the range "
+			<< (int)_currentLevel << " - " << ((int)newLevel - 1)
+			<< std::endl;
+
 	// close one component for each level that we ascend
 	for (Precision level = _currentLevel;; level++) {
 
@@ -384,28 +534,39 @@ ImageLevelParser<Precision>::pushBoundaryLocation(const point_type& location, Pr
 
 template <typename Precision>
 bool
-ImageLevelParser<Precision>::popLowerBoundaryLocation(
+ImageLevelParser<Precision>::popBoundaryLocation(
 		Precision   level,
-		point_type& boundaryLocation,
-		Precision&  boundaryLevel) {
+		point_type& boundaryLocation) {
+
+	if (_boundaryLocations[level].empty())
+		return false;
+
+	boundaryLocation = _boundaryLocations[level].top();
+	_boundaryLocations[level].pop();
+	_numOpenLocations--;
+
+	return true;
+}
+
+template <typename Precision>
+bool
+ImageLevelParser<Precision>::popLowerBoundaryLocation(
+		unsigned int level,
+		point_type&  boundaryLocation,
+		Precision&   boundaryLevel) {
 
 	if (level == 0)
 		return false;
 
 	for (Precision l = level - 1;; l--) {
 
-		if (!_boundaryLocations[l].empty()) {
+		if (popBoundaryLocation(l, boundaryLocation)) {
 
-			boundaryLocation = _boundaryLocations[l].top();
-			boundaryLevel    = l;
-
-			_boundaryLocations[l].pop();
-			_numOpenLocations--;
-
+			boundaryLevel = l;
 			return true;
 		}
 
-		if (l== 0)
+		if (l == 0)
 			return false;
 	}
 }
@@ -422,14 +583,9 @@ ImageLevelParser<Precision>::popHigherBoundaryLocation(
 
 	for (Precision l = level + 1;; l++) {
 
-		if (!_boundaryLocations[l].empty()) {
+		if (popBoundaryLocation(l, boundaryLocation)) {
 
-			boundaryLocation = _boundaryLocations[l].top();
-			boundaryLevel    = l;
-
-			_boundaryLocations[l].pop();
-			_numOpenLocations--;
-
+			boundaryLevel = l;
 			return true;
 		}
 
@@ -460,12 +616,89 @@ ImageLevelParser<Precision>::endComponent(Precision level, Visitor& visitor) {
 
 	assert(levelBegin.first == level);
 
-	LOG_ALL(imagelevelparserlog) << "ending component with level " << (int)level << std::endl;
+	//LOG_ALL(imagelevelparserlog) << "ending component with level " << (int)level << std::endl;
 
 	visitor.componentFound(
 			getOriginalValue(level),
 			begin, end,
 			_pixelList);
+}
+
+template <typename Precision>
+bool
+ImageLevelParser<Precision>::findNextNeighbor(
+		point_type& neighborLocation,
+		Precision&  neighborLevel) {
+
+	while (true) {
+
+		Direction direction = _nextDirection(_currentLocation.x, _currentLocation.y);
+
+		// we are stuck -- none of the neighbors is valid
+		if (direction >= 4)
+			return false;
+
+		_nextDirection(_currentLocation.x, _currentLocation.y)++;
+
+		if (direction == Left) {
+
+			//LOG_ALL(imagelevelparserlog) << "trying to go left" << std::endl;
+
+			if (_currentLocation.x == 0) {
+
+				//LOG_ALL(imagelevelparserlog) << "\tout of bounds" << std::endl;
+				continue;
+			}
+
+			neighborLocation = _currentLocation + point_type(-1,  0);
+		}
+		if (direction == Up) {
+
+			//LOG_ALL(imagelevelparserlog) << "trying to go up" << std::endl;
+
+			if (_currentLocation.y == 0) {
+
+				//LOG_ALL(imagelevelparserlog) << "\tout of bounds" << std::endl;
+				continue;
+			}
+
+			neighborLocation = _currentLocation + point_type( 0, -1);
+		}
+		if (direction == Right) {
+
+			//LOG_ALL(imagelevelparserlog) << "trying to go right" << std::endl;
+			neighborLocation = _currentLocation + point_type( 1,  0);
+		}
+
+		if (direction == Down) {
+
+			//LOG_ALL(imagelevelparserlog) << "trying to go down" << std::endl;
+			neighborLocation = _currentLocation + point_type( 0,  1);
+		}
+
+		// out of bounds?
+		if (neighborLocation.x >= _image.width() ||
+		    neighborLocation.y >= _image.height()) {
+
+			//LOG_ALL(imagelevelparserlog) << "\tlocation " << neighborLocation << " is out of bounds" << std::endl;
+			continue;
+		}
+
+		// already visited?
+		if (_visited(neighborLocation.x, neighborLocation.y)) {
+
+			//LOG_ALL(imagelevelparserlog) << "\talready visited" << std::endl;
+			continue;
+		}
+
+		//LOG_ALL(imagelevelparserlog)
+				//<< "succeeded -- valid neighbor is "
+				//<< neighborLocation << std::endl;
+
+		// we're good
+		neighborLevel = _image(neighborLocation.x, neighborLocation.y);
+		return true;
+	}
 }
 
 template <typename Precision>
