@@ -48,6 +48,11 @@ public:
 	iterator       end() { return _next; }
 	const_iterator end() const { return _next; }
 
+	/**
+	 * The number of pixels that have been added to this pixel list.
+	 */
+	size_t size() const { return (_next - _pixelList.begin()); }
+
 private:
 
 	// a non-resizing vector of pixel locations

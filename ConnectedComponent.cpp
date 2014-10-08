@@ -11,16 +11,16 @@ ConnectedComponent::ConnectedComponent(
 		boost::shared_ptr<Image> source,
 		double value,
 		boost::shared_ptr<pixel_list_type> pixelList,
-		unsigned int begin,
-		unsigned int end) :
+		pixel_list_type::const_iterator begin,
+		pixel_list_type::const_iterator end) :
 
 	_pixels(pixelList),
 	_value(value),
 	_boundingBox(0, 0, 0, 0),
 	_center(0, 0),
 	_source(source),
-	_begin(_pixels->begin() + begin),
-	_end(_pixels->begin() + end) {
+	_begin(begin),
+	_end(end) {
 
 	// if there is at least one pixel
 	if (begin != end) {
@@ -100,24 +100,23 @@ ConnectedComponent::operator<(const ConnectedComponent& other) const {
 ConnectedComponent
 ConnectedComponent::translate(const util::point<int>& pt)
 {
-	boost::shared_ptr<pixel_list_type> translation = boost::make_shared<pixel_list_type>();
+	boost::shared_ptr<pixel_list_type> translation = boost::make_shared<pixel_list_type>(getSize());
 	
 	foreach (const util::point<unsigned int>& pixel, getPixels())
 	{
-		translation->push_back(pixel + pt);
+		translation->add(pixel + pt);
 	}
 	
-	return ConnectedComponent(_source, _value, translation, 0, translation->size());
+	return ConnectedComponent(_source, _value, translation, translation->begin(), translation->end());
 }
 
 
 ConnectedComponent
 ConnectedComponent::intersect(const ConnectedComponent& other) {
 
-	boost::shared_ptr<pixel_list_type> intersection = boost::make_shared<pixel_list_type>();
-
+	// find the intersection pixels
+	std::vector<util::point<unsigned int> > intersectionPixels;
 	bitmap_type::size_type size = _bitmap.shape();
-
 	foreach (const util::point<unsigned int>& pixel, other.getPixels())
 		if (_boundingBox.contains(pixel)) {
 
@@ -128,10 +127,16 @@ ConnectedComponent::intersect(const ConnectedComponent& other) {
 				continue;
 
 			if (_bitmap(x, y))
-				intersection->push_back(pixel);
+				intersectionPixels.push_back(pixel);
 		}
 
-	return ConnectedComponent(_source, _value, intersection, 0, intersection->size());
+	// create a pixel list for them
+	boost::shared_ptr<pixel_list_type> intersection =
+			boost::make_shared<pixel_list_type>(intersectionPixels.size());
+	foreach (const util::point<unsigned int>& pixel, intersectionPixels)
+		intersection->add(pixel);
+
+	return ConnectedComponent(_source, _value, intersection, intersection->begin(), intersection->end());
 }
 
 bool ConnectedComponent::intersects(const ConnectedComponent& other)

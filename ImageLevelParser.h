@@ -31,18 +31,68 @@ class ImageLevelParser {
 public:
 
 	/**
-	 * Create a new image level parser for the given image.
+	 * Parameters of the image level parser.
 	 */
-	ImageLevelParser(const Image& image);
+	struct Parameters {
+
+		Parameters() : darkToBright(true) {}
+
+		// start processing the dark regions
+		bool darkToBright;
+	};
 
 	/**
-	 * Parse the image. The provided visitor has to implement
-	 *
-	 *     void Visitor::componentFound(
-	 *         Image::value_type            value,
-	 *         PixelList::const_iterator    begin,
-	 *         PixelList::const_iterator    end,
-	 *         boost::shared_ptr<PixelList> pixelList);
+	 * Base class and interface definition of visitors that are accepted by the 
+	 * parse methods. Visitors don't need to inherit from this class (as long as 
+	 * they implement the same interface). This class is provided for 
+	 * convenience with no-op methods.
+	 */
+	class Visitor {
+
+	public:
+
+		/**
+		 * Invoked whenever a new component is added as a child of the current 
+		 * component, starting from the root (the whole image component) in a 
+		 * depth first manner.  Indicates that we go down by one level in the 
+		 * component tree and make the new child the current component.
+		 *
+		 * @param value
+		 *              The threshold value of the new child.
+		 */
+		void newChildComponent(Image::value_type value) {}
+
+		/**
+		 * Invoked whenever the current component was extracted entirely.  
+		 * Indicates that we go up by one level in the component tree and make 
+		 * the parent of the current component the new current component.
+		 *
+		 * @param value
+		 *              The threshold value of the current component.
+		 *
+		 * @param begin, end
+		 *              Iterators into the pixel list that define the pixels of 
+		 *              the current component.
+		 *
+		 * @param pixelList
+		 *              A pixel list shared between all components.
+		 */
+		void finalizeComponent(
+				Image::value_type            value,
+				PixelList::const_iterator    begin,
+				PixelList::const_iterator    end,
+				boost::shared_ptr<PixelList> pixelList) {}
+	};
+
+	/**
+	 * Create a new image level parser for the given image with the given 
+	 * parameters.
+	 */
+	ImageLevelParser(const Image& image, const Parameters& parameters = Parameters());
+
+	/**
+	 * Parse the image. The provided visitor has to implement the interface of 
+	 * Visitor (but does not need to inherit from it).
 	 *
 	 * This method will be called for every connected component at every 
 	 * threshold, where value is the original value (before discretization) of 
@@ -52,8 +102,8 @@ public:
 	 * The visitor can assume that the callback is invoked following a weak 
 	 * ordering of the connected component according to the subset relation.
 	 */
-	template <typename Visitor>
-	void parse(Visitor& visitor);
+	template <typename VisitorType>
+	void parse(VisitorType& visitor);
 
 private:
 
@@ -74,7 +124,8 @@ private:
 	 * In the current boundary locations, find the highest level that is smaller 
 	 * than the current level and go there.
 	 */
-	void gotoLowerLevel();
+	template <typename VisitorType>
+	void gotoLowerLevel(VisitorType& visitor);
 
 	/**
 	 * In the current boundary locations, try to find the lowest level that is 
@@ -83,8 +134,8 @@ private:
 	 * informed) and true is returned. Otherwise, all remaining open components 
 	 * are closed (including the one for MaxValue) and false is returned.
 	 */
-	template <typename Visitor>
-	bool gotoHigherLevel(Visitor& visitor);
+	template <typename VisitorType>
+	bool gotoHigherLevel(VisitorType& visitor);
 
 	/**
 	 * Check if there are open boundary locations.
@@ -159,7 +210,8 @@ private:
 	 * Begin a new connected component at the current location for the given 
 	 * level.
 	 */
-	void beginComponent(Precision level);
+	template <typename VisitorType>
+	void beginComponent(Precision level, VisitorType& visitor);
 
 	/**
 	 * End a connected component at the current location.
@@ -167,15 +219,21 @@ private:
 	 * @return The begin and end iterator of the new connected component in the 
 	 * pixel list.
 	 */
-	template <typename Visitor>
-	void endComponent(Precision level, Visitor& visitor);
+	template <typename VisitorType>
+	void endComponent(Precision level, VisitorType& visitor);
 
 	/**
-	 * Find the next neighbor of the current position that has not been visited 
-	 * or been proposed by this method earlier. Returns false if there are no 
-	 * valid neighbors anymore.
+	 * Find the neighbor of the current position in the given direction. Returns 
+	 * false, if the neighbor is not valid (out of bounds or already visited).  
+	 * Otherwise, neighborLocation and neighborLevel are set and true is 
+	 * returned.
 	 */
-	bool findNextNeighbor(point_type& neighborLocation, Precision& neighborLevel);
+	typedef unsigned char Direction;
+	static const Direction Right;
+	static const Direction Down;
+	static const Direction Left;
+	static const Direction Up;
+	bool findNeighbor(Direction direction, point_type& neighborLocation, Precision& neighborLevel);
 
 	/**
 	 * Discretized the input image into the range defined by Precision.
@@ -191,6 +249,9 @@ private:
 
 	// discretized version of the input image
 	vigra::MultiArray<2, Precision> _image;
+
+	// parameters of the parsing algorithm
+	Parameters _parameters;
 
 	// the current location of the parsing algorithm
 	point_type   _currentLocation;
@@ -212,15 +273,6 @@ private:
 
 	// visited flag for each pixel
 	vigra::MultiArray<2, bool> _visited;
-
-	typedef unsigned char Direction;
-	static const Direction Right;
-	static const Direction Down;
-	static const Direction Left;
-	static const Direction Up;
-
-	// the direction in which to walk next after visiting a pixel
-	vigra::MultiArray<2, Direction> _nextDirection;
 };
 
 template <typename Precision>
@@ -235,7 +287,8 @@ template <typename Precision>
 const typename ImageLevelParser<Precision>::Direction ImageLevelParser<Precision>::Up    = 3;
 
 template <typename Precision>
-ImageLevelParser<Precision>::ImageLevelParser(const Image& image) :
+ImageLevelParser<Precision>::ImageLevelParser(const Image& image, const Parameters& parameters) :
+	_parameters(parameters),
 	_pixelList(boost::make_shared<PixelList>(image.size())),
 	_boundaryLocations(MaxValue + 1),
 	_numOpenLocations(0) {
@@ -243,18 +296,15 @@ ImageLevelParser<Precision>::ImageLevelParser(const Image& image) :
 	_visited.reshape(image.shape());
 	_visited = false;
 
-	_nextDirection.reshape(image.shape());
-	_nextDirection = Right;
-
 	LOG_DEBUG(imagelevelparserlog) << "initializing for image of size " << image.size() << std::endl;
 
 	this->discretizeImage(image);
 }
 
 template <typename Precision>
-template <typename Visitor>
+template <typename VisitorType>
 void
-ImageLevelParser<Precision>::parse(Visitor& visitor) {
+ImageLevelParser<Precision>::parse(VisitorType& visitor) {
 
 	LOG_DEBUG(imagelevelparserlog) << "parsing image" << std::endl;
 
@@ -267,7 +317,7 @@ ImageLevelParser<Precision>::parse(Visitor& visitor) {
 
 	// ...and going to the next lower level (which is our initial pixel). This 
 	// way we make sure enough components are put on the stack.
-	gotoLowerLevel();
+	gotoLowerLevel(visitor);
 
 	LOG_DEBUG(imagelevelparserlog)
 			<< "starting at " << _currentLocation
@@ -307,7 +357,7 @@ ImageLevelParser<Precision>::parse(Visitor& visitor) {
 
 			// there are boundary locations that have lower levels -- go there 
 			// and continue filling
-			gotoLowerLevel();
+			gotoLowerLevel(visitor);
 		}
 	}
 }
@@ -345,8 +395,12 @@ ImageLevelParser<Precision>::fillLevel() {
 
 		bool smallerNeighborFound = false;
 
-		// look at all neighbors
-		while (findNextNeighbor(neighborLocation, neighborLevel)) {
+		// look at all valid neighbors
+		for (Direction direction = 0; direction < 4; direction++) {
+
+			// is this a valid neighbor?
+			if (!findNeighbor(direction, neighborLocation, neighborLevel))
+				continue;
 
 			if (neighborLevel < fillLevel) {
 
@@ -427,8 +481,9 @@ ImageLevelParser<Precision>::fillLevel() {
 }
 
 template <typename Precision>
+template <typename VisitorType>
 void
-ImageLevelParser<Precision>::gotoLowerLevel() {
+ImageLevelParser<Precision>::gotoLowerLevel(VisitorType& visitor) {
 
 	assert(_currentLevel != 0);
 
@@ -450,7 +505,7 @@ ImageLevelParser<Precision>::gotoLowerLevel() {
 	// begin a new component for each level that we descend
 	for (Precision level = _currentLevel - 1;; level--) {
 
-		beginComponent(level);
+		beginComponent(level, visitor);
 
 		if (level == newLevel)
 			break;
@@ -462,9 +517,9 @@ ImageLevelParser<Precision>::gotoLowerLevel() {
 }
 
 template <typename Precision>
-template <typename Visitor>
+template <typename VisitorType>
 bool
-ImageLevelParser<Precision>::gotoHigherLevel(Visitor& visitor) {
+ImageLevelParser<Precision>::gotoHigherLevel(VisitorType& visitor) {
 
 	point_type newLocation;
 	Precision  newLevel;
@@ -595,16 +650,19 @@ ImageLevelParser<Precision>::popHigherBoundaryLocation(
 }
 
 template <typename Precision>
+template <typename VisitorType>
 void
-ImageLevelParser<Precision>::beginComponent(Precision level) {
+ImageLevelParser<Precision>::beginComponent(Precision level, VisitorType& visitor) {
 
 	_componentBegins.push(std::make_pair(level, _pixelList->end()));
+
+	visitor.newChildComponent(getOriginalValue(level));
 }
 
 template <typename Precision>
-template <typename Visitor>
+template <typename VisitorType>
 void
-ImageLevelParser<Precision>::endComponent(Precision level, Visitor& visitor) {
+ImageLevelParser<Precision>::endComponent(Precision level, VisitorType& visitor) {
 
 	assert(_componentBegins.size() > 0);
 
@@ -618,7 +676,7 @@ ImageLevelParser<Precision>::endComponent(Precision level, Visitor& visitor) {
 
 	//LOG_ALL(imagelevelparserlog) << "ending component with level " << (int)level << std::endl;
 
-	visitor.componentFound(
+	visitor.finalizeComponent(
 			getOriginalValue(level),
 			begin, end,
 			_pixelList);
@@ -626,79 +684,71 @@ ImageLevelParser<Precision>::endComponent(Precision level, Visitor& visitor) {
 
 template <typename Precision>
 bool
-ImageLevelParser<Precision>::findNextNeighbor(
+ImageLevelParser<Precision>::findNeighbor(
+		Direction   direction,
 		point_type& neighborLocation,
 		Precision&  neighborLevel) {
 
-	while (true) {
 
-		Direction direction = _nextDirection(_currentLocation.x, _currentLocation.y);
+	if (direction == Left) {
 
-		// we are stuck -- none of the neighbors is valid
-		if (direction >= 4)
+		//LOG_ALL(imagelevelparserlog) << "trying to go left" << std::endl;
+
+		if (_currentLocation.x == 0) {
+
+			//LOG_ALL(imagelevelparserlog) << "\tout of bounds" << std::endl;
 			return false;
-
-		_nextDirection(_currentLocation.x, _currentLocation.y)++;
-
-		if (direction == Left) {
-
-			//LOG_ALL(imagelevelparserlog) << "trying to go left" << std::endl;
-
-			if (_currentLocation.x == 0) {
-
-				//LOG_ALL(imagelevelparserlog) << "\tout of bounds" << std::endl;
-				continue;
-			}
-
-			neighborLocation = _currentLocation + point_type(-1,  0);
-		}
-		if (direction == Up) {
-
-			//LOG_ALL(imagelevelparserlog) << "trying to go up" << std::endl;
-
-			if (_currentLocation.y == 0) {
-
-				//LOG_ALL(imagelevelparserlog) << "\tout of bounds" << std::endl;
-				continue;
-			}
-
-			neighborLocation = _currentLocation + point_type( 0, -1);
-		}
-		if (direction == Right) {
-
-			//LOG_ALL(imagelevelparserlog) << "trying to go right" << std::endl;
-			neighborLocation = _currentLocation + point_type( 1,  0);
 		}
 
-		if (direction == Down) {
-
-			//LOG_ALL(imagelevelparserlog) << "trying to go down" << std::endl;
-			neighborLocation = _currentLocation + point_type( 0,  1);
-		}
-
-		// out of bounds?
-		if (neighborLocation.x >= _image.width() ||
-		    neighborLocation.y >= _image.height()) {
-
-			//LOG_ALL(imagelevelparserlog) << "\tlocation " << neighborLocation << " is out of bounds" << std::endl;
-			continue;
-		}
-
-		// already visited?
-		if (_visited(neighborLocation.x, neighborLocation.y)) {
-
-			//LOG_ALL(imagelevelparserlog) << "\talready visited" << std::endl;
-			continue;
-		}
-
-		//LOG_ALL(imagelevelparserlog)
-				//<< "succeeded -- valid neighbor is "
-				//<< neighborLocation << std::endl;
-
-		// we're good
-		neighborLevel = _image(neighborLocation.x, neighborLocation.y);
-		return true;
+		neighborLocation = _currentLocation + point_type(-1,  0);
 	}
+	if (direction == Up) {
+
+		//LOG_ALL(imagelevelparserlog) << "trying to go up" << std::endl;
+
+		if (_currentLocation.y == 0) {
+
+			//LOG_ALL(imagelevelparserlog) << "\tout of bounds" << std::endl;
+			return false;
+		}
+
+		neighborLocation = _currentLocation + point_type( 0, -1);
+	}
+	if (direction == Right) {
+
+		//LOG_ALL(imagelevelparserlog) << "trying to go right" << std::endl;
+		neighborLocation = _currentLocation + point_type( 1,  0);
+	}
+
+	if (direction == Down) {
+
+		//LOG_ALL(imagelevelparserlog) << "trying to go down" << std::endl;
+		neighborLocation = _currentLocation + point_type( 0,  1);
+	}
+
+	// out of bounds?
+	if (neighborLocation.x >= _image.width() ||
+		neighborLocation.y >= _image.height()) {
+
+		//LOG_ALL(imagelevelparserlog) << "\tlocation " << neighborLocation << " is out of bounds" << std::endl;
+		return false;
+	}
+
+	// already visited?
+	if (_visited(neighborLocation.x, neighborLocation.y)) {
+
+		//LOG_ALL(imagelevelparserlog) << "\talready visited" << std::endl;
+		return false;
+	}
+
+	//LOG_ALL(imagelevelparserlog)
+			//<< "succeeded -- valid neighbor is "
+			//<< neighborLocation << std::endl;
+
+	// we're good
+	neighborLevel = _image(neighborLocation.x, neighborLocation.y);
+
+	return true;
 }
 
 template <typename Precision>
@@ -707,17 +757,26 @@ ImageLevelParser<Precision>::discretizeImage(const Image& image) {
 
 	_image.reshape(image.shape());
 
-	vigra::transformImage(
-			srcImageRange(image),
-			destImage(_image),
-			vigra::functor::Arg1()*vigra::functor::Param(MaxValue));
+	if (_parameters.darkToBright)
+		vigra::transformImage(
+				srcImageRange(image),
+				destImage(_image),
+				vigra::functor::Arg1()*vigra::functor::Param(MaxValue));
+	else // invert the image on-the-fly
+		vigra::transformImage(
+				srcImageRange(image),
+				destImage(_image),
+				vigra::functor::Param(MaxValue) - vigra::functor::Arg1()*vigra::functor::Param(MaxValue));
 }
 
 template <typename Precision>
 float
 ImageLevelParser<Precision>::getOriginalValue(Precision value) {
 
-	return static_cast<float>(value)/MaxValue;
+	if (_parameters.darkToBright)
+		return static_cast<float>(value)/MaxValue;
+	else
+		return static_cast<float>(MaxValue - value)/MaxValue;
 }
 
 #endif // IMAGEPROCESSING_IMAGE_LEVEL_PARSER_H__

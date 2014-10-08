@@ -1,5 +1,7 @@
 #include "ComponentTree.h"
 
+ComponentTree::Node::Node() {}
+
 ComponentTree::Node::Node(boost::shared_ptr<ConnectedComponent> component) :
 	_component(component) {}
 
@@ -23,10 +25,30 @@ ComponentTree::Node::addChild(boost::shared_ptr<ComponentTree::Node> componentNo
 	_children.push_back(componentNode);
 }
 
+bool
+ComponentTree::Node::removeChild(boost::shared_ptr<Node> child) {
+
+	std::vector<boost::shared_ptr<ComponentTree::Node> >::iterator i =
+			std::find(_children.begin(), _children.end(), child);
+
+	if (i == _children.end())
+		return false;
+
+	_children.erase(i);
+
+	return true;
+}
+
 std::vector<boost::shared_ptr<ComponentTree::Node> >
 ComponentTree::Node::getChildren() {
 
 	return _children;
+}
+
+void
+ComponentTree::Node::setComponent(boost::shared_ptr<ConnectedComponent> component) {
+
+	_component = component;
 }
 
 boost::shared_ptr<ConnectedComponent>

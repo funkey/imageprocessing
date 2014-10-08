@@ -114,7 +114,10 @@ ComponentTreeHdf5Writer::WriteVisitor::save(H5::Group& group) {
 		dims.clear();
 		dims.push_back(list->size());
 
-		hdf5::write(group, "pixel_list_" + boost::lexical_cast<std::string>(id), *list, dims, pixelType);
+		std::vector<util::point<unsigned int> > listVector(list->size());
+		std::copy(list->begin(), list->end(), listVector.begin());
+
+		hdf5::write(group, "pixel_list_" + boost::lexical_cast<std::string>(id), listVector, dims, pixelType);
 	}
 }
 
