@@ -15,6 +15,9 @@ ComponentTreeView::ComponentTreeView() {
 void
 ComponentTreeView::updateOutputs() {
 
+	if (!_painter)
+		_painter = new ComponentTreePainter();
+
 	util::rect<double> oldSize = _painter->getSize();
 
 	_painter->setComponentTree(_componentTree);
