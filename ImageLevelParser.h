@@ -528,8 +528,16 @@ ImageLevelParser<Precision>::gotoHigherLevel(VisitorType& visitor) {
 			<< "trying to find smallest boundary location higher then "
 			<< (int)_currentLevel << std::endl;
 
-	// find the lowest boundary location higher then the current level
-	bool found = popHigherBoundaryLocation(_currentLevel, newLocation, newLevel);
+	bool found = false;
+
+	// find the lowest boundary location higher then the current level that has 
+	// not been visited yet
+	while (popHigherBoundaryLocation(_currentLevel, newLocation, newLevel))
+		if (!_visited(newLocation.x, newLocation.y)) {
+
+			found = true;
+			break;
+		}
 
 	if (!found) {
 
