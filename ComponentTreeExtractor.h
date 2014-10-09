@@ -29,7 +29,9 @@ private:
 				unsigned int                     maxSize) :
 			_image(image),
 			_minSize(minSize),
-			_maxSize(maxSize) {}
+			_maxSize(maxSize),
+			_prevBegin(0),
+			_prevEnd(0) {}
 
 		void newChildComponent(float value);
 
@@ -50,6 +52,10 @@ private:
 
 		unsigned int _minSize;
 		unsigned int _maxSize;
+
+		// extents of the previous component
+		PixelList::const_iterator _prevBegin;
+		PixelList::const_iterator _prevEnd;
 	};
 
 	void updateOutputs();
@@ -116,7 +122,11 @@ ComponentTreeExtractor<Precision>::ComponentVisitor::finalizeComponent(
 	size_t size = end - begin;
 
 	// is this an invalid component that is not the root node?
-	if (parent && (size < _minSize || (_maxSize > 0 && size >= _maxSize))) {
+	if (parent && (
+			size < _minSize ||
+			(_maxSize > 0 && size >= _maxSize) ||
+			(begin == _prevBegin && end == _prevEnd))
+		) {
 
 		LOG_ALL(componenttreeextractorlog)
 				<< "I don't want this component (" << size
@@ -152,6 +162,9 @@ ComponentTreeExtractor<Precision>::ComponentVisitor::finalizeComponent(
 	// make the parent of the current component the new current component
 	// (if this was the root node, the new current node should point to 0)
 	_currentNode = parent;
+
+	_prevBegin = begin;
+	_prevEnd   = end;
 }
 
 template <typename Precision>
