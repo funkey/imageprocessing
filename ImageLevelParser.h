@@ -112,20 +112,15 @@ private:
 	/**
 	 * Set the current location and level.
 	 */
-	void gotoLocation(const point_type& location);
+	template <typename VisitorType>
+	void gotoLocation(const point_type& location, VisitorType& visitor);
 
 	/**
 	 * Fill the level at the current location. Returns true, if the level is 
 	 * bounded (only higher levels surround it); otherwise false.
 	 */
-	bool fillLevel();
-
-	/**
-	 * In the current boundary locations, find the lowest level that is smaller 
-	 * than the current level and go there.
-	 */
 	template <typename VisitorType>
-	void gotoLowestLevel(VisitorType& visitor);
+	void fillLevel(VisitorType& visitor);
 
 	/**
 	 * In the current boundary locations, try to find the lowest level that is 
@@ -136,6 +131,14 @@ private:
 	 */
 	template <typename VisitorType>
 	bool gotoHigherLevel(VisitorType& visitor);
+
+	/**
+	 * In the current boundary locations, try to find the lowest level that is 
+	 * lower than the reference level and go there. If such a level exists, true 
+	 * is returned.
+	 */
+	template <typename VisitorType>
+	bool gotoLowerLevel(Precision referenceLevel, VisitorType& visitor);
 
 	/**
 	 * Check if there are open boundary locations.
@@ -308,16 +311,12 @@ ImageLevelParser<Precision>::parse(VisitorType& visitor) {
 
 	LOG_DEBUG(imagelevelparserlog) << "parsing image" << std::endl;
 
-	// We initialize the process by adding the upper left pixel to the stack of 
-	// open boundary pixels...
-	pushBoundaryLocation(point_type(0, 0), _image(0, 0));
-
-	// ...pretending we come from level MaxValue + 1...
+	// Pretend we come from level MaxValue + 1...
 	_currentLevel = MaxValue + 1;
 
-	// ...and going to the next lower level (which is our initial pixel). This 
-	// way we make sure enough components are put on the stack.
-	gotoLowestLevel(visitor);
+	// ...and go to our initial pixel. This way we make sure enough components 
+	// are put on the stack.
+	gotoLocation(point_type(0, 0), visitor);
 
 	LOG_DEBUG(imagelevelparserlog)
 			<< "starting at " << _currentLocation
@@ -327,63 +326,82 @@ ImageLevelParser<Precision>::parse(VisitorType& visitor) {
 	// loop through the image
 	while (true) {
 
-		// try to fill the current level
-		bool bounded = fillLevel();
+		// fill the current level
+		fillLevel(visitor);
 
-		// there are no lower levels around us
-		if (bounded) {
+		LOG_DEBUG(imagelevelparserlog)
+				<< "filled current level"
+				<< std::endl;
 
-			LOG_DEBUG(imagelevelparserlog)
-					<< "filled current level"
-					<< std::endl;
-
-			// try go to the smallest higher level, according to our open 
-			// boundary list
-			if (!gotoHigherLevel(visitor)) {
-
-				LOG_DEBUG(imagelevelparserlog)
-						<< "there are no more higher levels -- we are done"
-						<< std::endl;
-
-				// if there are no higher levels, we are done
-				return;
-			}
-
-		} else {
+		// try go to the smallest higher level, according to our open 
+		// boundary list
+		if (!gotoHigherLevel(visitor)) {
 
 			LOG_DEBUG(imagelevelparserlog)
-					<< "current level is not bounded, yet"
+					<< "there are no more higher levels -- we are done"
 					<< std::endl;
 
-			// there are boundary locations that have lower levels -- go there 
-			// and continue filling
-			gotoLowestLevel(visitor);
+			// if there are no higher levels, we are done
+			return;
 		}
 	}
 }
 
 template <typename Precision>
+template <typename VisitorType>
 void
-ImageLevelParser<Precision>::gotoLocation(const point_type& location) {
+ImageLevelParser<Precision>::gotoLocation(const point_type& newLocation, VisitorType& visitor) {
 
-	_currentLocation = location;
-	_currentLevel    = _image(location.x, location.y);
+	Precision newLevel = _image(newLocation.x, newLocation.y);
 
-	assert(_visited(location.x, location.y) == false);
+	// if we descend
+	if (_currentLevel > newLevel) {
 
-	_visited(location.x, location.y) = true;
-	_pixelList->add(location);
+		// begin a new component for each level that we descend
+		for (Precision level = _currentLevel- 1;; level--) {
+
+			beginComponent(level, visitor);
+
+			if (level == newLevel)
+				break;
+		}
+
+	// if we ascend
+	} else if (_currentLevel < newLevel) {
+
+		// close one component for each level that we ascend
+		for (Precision level = _currentLevel;; level++) {
+
+			endComponent(level, visitor);
+
+			if (level == newLevel - 1)
+				break;
+		}
+	}
+
+	// go to the new location
+	_currentLocation = newLocation;
+	_currentLevel    = newLevel;
+
+	// the first time we are here?
+	if (!_visited(newLocation.x, newLocation.y)) {
+
+		// mark it as visited and add it to the pixel list
+		_visited(newLocation.x, newLocation.y) = true;
+		_pixelList->add(newLocation);
+	}
 }
 
 template <typename Precision>
-bool
-ImageLevelParser<Precision>::fillLevel() {
+template <typename VisitorType>
+void
+ImageLevelParser<Precision>::fillLevel(VisitorType& visitor) {
 
-	// we are supposed to fill all adjacent pixels of the current pixels that 
+	// we are supposed to fill all adjacent pixels of the current pixel that 
 	// have the same level
-	Precision fillLevel = _currentLevel;
+	Precision targetLevel = _currentLevel;
 
-	LOG_ALL(imagelevelparserlog) << "filling level " << (int)fillLevel << std::endl;
+	LOG_ALL(imagelevelparserlog) << "filling level " << (int)targetLevel << std::endl;
 
 	point_type neighborLocation;
 	Precision  neighborLevel;
@@ -393,8 +411,6 @@ ImageLevelParser<Precision>::fillLevel() {
 
 		LOG_ALL(imagelevelparserlog) << "I am at " << _currentLocation << std::endl;
 
-		bool smallerNeighborFound = false;
-
 		// look at all valid neighbors
 		for (Direction direction = 0; direction < 4; direction++) {
 
@@ -402,19 +418,30 @@ ImageLevelParser<Precision>::fillLevel() {
 			if (!findNeighbor(direction, neighborLocation, neighborLevel))
 				continue;
 
-			if (neighborLevel < fillLevel) {
+			if (neighborLevel < targetLevel) {
+
+				// We found a smaller neighbor. Interrupt filling the current 
+				// level and fill the smaller one first.
 
 				LOG_ALL(imagelevelparserlog)
 						<< "neighbor is smaller (" << (int)neighborLevel
 						<< "), will go down" << std::endl;
 
-				// We found a smaller neighbor. Remember the neighbor and return 
-				// false, since we are not bounded. This will cause filling of 
-				// the lower levels.
-				pushBoundaryLocation(neighborLocation, neighborLevel);
-				smallerNeighborFound = true;
+				// remember where we are
+				point_type currentLocation = _currentLocation;
 
-			} else if (neighborLevel > fillLevel) {
+				// remember the lower neighbor location
+				pushBoundaryLocation(neighborLocation, neighborLevel);
+
+				// fill all levels that are lower than our target level (calls 
+				// to fillLevel might add more then the one we just found)
+				while (gotoLowerLevel(targetLevel, visitor))
+					fillLevel(visitor);
+
+				// go back to where we were
+				gotoLocation(currentLocation, visitor);
+
+			} else if (neighborLevel > targetLevel) {
 
 				LOG_ALL(imagelevelparserlog)
 						<< "neighbor is larger (" << (int)neighborLevel
@@ -434,16 +461,12 @@ ImageLevelParser<Precision>::fillLevel() {
 			}
 		}
 
-		// continue filling the smaller level
-		if (smallerNeighborFound)
-			return false;
-
 		// try to find the next non-visited boundary location of the current 
 		// level
 		while (true) {
 
 			point_type newLocation;
-			bool found = popBoundaryLocation(fillLevel, newLocation);
+			bool found = popBoundaryLocation(targetLevel, newLocation);
 
 			// if there aren't any other boundary locations of the current 
 			// level, we are done and bounded
@@ -453,15 +476,14 @@ ImageLevelParser<Precision>::fillLevel() {
 						<< "no more boundary locations for the current level"
 						<< std::endl;
 
-				return true;
+				return;
 			}
 
 			LOG_ALL(imagelevelparserlog)
 					<< "found location " << newLocation
 					<< " on the boundary" << std::endl;
 
-			// continue searching, if the boundary location was not visited 
-			// already
+			// continue searching, if the boundary location was visited already
 			if (_visited(newLocation.x, newLocation.y)) {
 
 				LOG_ALL(imagelevelparserlog) << "this location was visited already" << std::endl;
@@ -472,48 +494,10 @@ ImageLevelParser<Precision>::fillLevel() {
 
 			// we found a not-yet-visited boundary location of the current 
 			// level -- continue filling with it
-			gotoLocation(newLocation);
+			gotoLocation(newLocation, visitor);
 			break;
 		}
 	}
-
-	return true;
-}
-
-template <typename Precision>
-template <typename VisitorType>
-void
-ImageLevelParser<Precision>::gotoLowestLevel(VisitorType& visitor) {
-
-	assert(_currentLevel != 0);
-
-	point_type newLocation;
-	Precision  newLevel;
-
-	LOG_ALL(imagelevelparserlog)
-			<< "trying to find lowest boundary location lower then "
-			<< (int)_currentLevel << std::endl;
-
-	// find the highest boundary location lower than the current level
-	bool found = popLowestBoundaryLocation(_currentLevel, newLocation, newLevel);
-	assert(found);
-
-	LOG_ALL(imagelevelparserlog)
-			<< "found boundary location " << newLocation
-			<< " with level " << (int)newLevel << std::endl;
-
-	// begin a new component for each level that we descend
-	for (Precision level = _currentLevel - 1;; level--) {
-
-		beginComponent(level, visitor);
-
-		if (level == newLevel)
-			break;
-	}
-
-	gotoLocation(newLocation);
-
-	assert(_currentLevel == newLevel);
 }
 
 template <typename Precision>
@@ -564,20 +548,40 @@ ImageLevelParser<Precision>::gotoHigherLevel(VisitorType& visitor) {
 			<< (int)_currentLevel << " - " << ((int)newLevel - 1)
 			<< std::endl;
 
-	// close one component for each level that we ascend
-	for (Precision level = _currentLevel;; level++) {
-
-		endComponent(level, visitor);
-
-		if (level == newLevel - 1)
-			break;
-	}
-
-	gotoLocation(newLocation);
+	gotoLocation(newLocation, visitor);
 
 	assert(_currentLevel == newLevel);
 
 	return true;
+}
+
+template <typename Precision>
+template <typename VisitorType>
+bool
+ImageLevelParser<Precision>::gotoLowerLevel(Precision referenceLevel, VisitorType& visitor) {
+
+	point_type newLocation;
+	Precision  newLevel;
+
+	LOG_ALL(imagelevelparserlog)
+			<< "trying to find lowest boundary location smaller then "
+			<< (int)referenceLevel << std::endl;
+
+	// find the lowest boundary location higher then the reference level that 
+	// has not been visited yet
+	while (popLowestBoundaryLocation(referenceLevel, newLocation, newLevel))
+		if (!_visited(newLocation.x, newLocation.y)) {
+
+			LOG_ALL(imagelevelparserlog)
+					<< "found boundary location " << newLocation
+					<< " with level " << (int)newLevel << std::endl;
+
+			gotoLocation(newLocation, visitor);
+			assert(_currentLevel == newLevel);
+			return true;
+		}
+
+	return false;
 }
 
 template <typename Precision>
