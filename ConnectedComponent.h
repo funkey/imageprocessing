@@ -7,9 +7,11 @@
 #include <util/point.hpp>
 #include <util/rect.hpp>
 #include <util/Logger.h>
+#include <util/Hashable.h>
 #include <pipeline/all.h>
+#include "ConnectedComponentHash.h"
 
-class ConnectedComponent : public pipeline::Data {
+class ConnectedComponent : public pipeline::Data, public Hashable<ConnectedComponent, ConnectedComponentHash> {
 
 public:
 
