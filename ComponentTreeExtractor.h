@@ -35,12 +35,12 @@ private:
 
 		void setPixelList(boost::shared_ptr<PixelList> pixelList) { _pixelList = pixelList; }
 
-		void finalizeComponent(
+		inline void finalizeComponent(
 				float                        value,
 				PixelList::const_iterator    begin,
 				PixelList::const_iterator    end);
 
-		boost::shared_ptr<ComponentTree::Node> getRoot() { assert(_roots.size() == 1); return _roots.top(); }
+		boost::shared_ptr<ComponentTree::Node> getRoot();
 
 	private:
 
@@ -84,15 +84,22 @@ ComponentTreeExtractor<Precision>::ComponentVisitor::finalizeComponent(
 		PixelList::const_iterator    begin,
 		PixelList::const_iterator    end) {
 
-	size_t size    = end - begin;
-	bool   changed = (begin != _prevBegin || end != _prevEnd);
+	bool changed = (begin != _prevBegin || end != _prevEnd);
 
 	_prevBegin = begin;
 	_prevEnd   = end;
 
-	bool valid = (size >= _minSize && (_maxSize == 0 || size < _maxSize) && changed);
+	if (!changed)
+		return;
 
-	if (!valid)
+	size_t size = end - begin;
+
+	bool wholeImage = (size == _image->size());
+	bool validSize  = (size >= _minSize && (_maxSize == 0 || size < _maxSize));
+
+	// we accept the whole image, even if it is not a valid size, to create a 
+	// single root node
+	if (!validSize && !wholeImage)
 		return;
 
 	LOG_ALL(componenttreeextractorlog)
@@ -119,6 +126,13 @@ ComponentTreeExtractor<Precision>::ComponentVisitor::finalizeComponent(
 
 	// put the new node on the stack
 	_roots.push(node);
+}
+
+template <typename Precision>
+boost::shared_ptr<ComponentTree::Node>
+ComponentTreeExtractor<Precision>::ComponentVisitor::getRoot() {
+
+	return _roots.top();
 }
 
 template <typename Precision>
