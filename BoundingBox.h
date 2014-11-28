@@ -41,6 +41,20 @@ public:
 	void setMax(float maxX, float maxY, float maxZ) { _maxX = maxX; _maxY = maxY; _maxZ = maxZ; }
 
 	/**
+	 * Set the minimal point of the bounding box.
+	 */
+	void setMinX(float minX) { _minX = minX; }
+	void setMinY(float minY) { _minY = minY; }
+	void setMinZ(float minZ) { _minZ = minZ; }
+
+	/**
+	 * Set the maximal point of the bounding box.
+	 */
+	void setMaxX(float maxX) { _maxX = maxX; }
+	void setMaxY(float maxY) { _maxY = maxY; }
+	void setMaxZ(float maxZ) { _maxZ = maxZ; }
+
+	/**
 	 * Get the minimal point of the bounding box.
 	 */
 	float getMinX() const { return _minX; }
