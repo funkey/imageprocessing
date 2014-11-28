@@ -59,4 +59,20 @@ SubStackSelector::updateOutputs() {
 
 	for (unsigned int i = _firstImage; i <= lastImage; i++)
 		_subStack->add((*_stack)[i]);
+
+	// set the resolution of the substack
+	float resX = _stack->getOffsetX();
+	float resY = _stack->getOffsetY();
+	float resZ = _stack->getOffsetZ();
+
+	_subStack->setResolution(resX, resY, resZ);
+
+	// set the z offset of the new stack
+	float offsetX = _stack->getOffsetX();
+	float offsetY = _stack->getOffsetY();
+	float offsetZ = _stack->getOffsetZ();
+
+	offsetZ += _firstImage*resZ;
+
+	_subStack->setOffset(offsetX, offsetY, offsetZ);
 }
