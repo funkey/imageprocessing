@@ -61,18 +61,19 @@ SubStackSelector::updateOutputs() {
 		_subStack->add((*_stack)[i]);
 
 	// set the resolution of the substack
-	float resX = _stack->getOffsetX();
-	float resY = _stack->getOffsetY();
-	float resZ = _stack->getOffsetZ();
+	float resX = _stack->getResolutionX();
+	float resY = _stack->getResolutionY();
+	float resZ = _stack->getResolutionZ();
 
 	_subStack->setResolution(resX, resY, resZ);
 
-	// set the z offset of the new stack
-	float offsetX = _stack->getOffsetX();
-	float offsetY = _stack->getOffsetY();
-	float offsetZ = _stack->getOffsetZ();
+	// set the bounds of the new stack
+	_subStack->setBoundingBox(_stack->getBoundingBox());
 
-	offsetZ += _firstImage*resZ;
+	float minZ    = _stack->getBoundingBox().getMinZ();
+	float subMinZ = minZ + _firstImage*resZ;
+	float subMaxZ = minZ + lastImage*resZ;
 
-	_subStack->setOffset(offsetX, offsetY, offsetZ);
+	_subStack->getBoundingBox().setMinZ(subMinZ);
+	_subStack->getBoundingBox().setMaxZ(subMaxZ);
 }
