@@ -71,7 +71,7 @@ public:
 		 *
 		 * @return A vector of shared pointers to the children of this node.
 		 */
-		std::vector<boost::shared_ptr<Node> > getChildren();
+		const std::vector<boost::shared_ptr<Node> >& getChildren() const;
 
 		/**
 		 * Set the connected component represented by this node.

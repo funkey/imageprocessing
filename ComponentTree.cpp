@@ -39,8 +39,8 @@ ComponentTree::Node::removeChild(boost::shared_ptr<Node> child) {
 	return true;
 }
 
-std::vector<boost::shared_ptr<ComponentTree::Node> >
-ComponentTree::Node::getChildren() {
+const std::vector<boost::shared_ptr<ComponentTree::Node> >&
+ComponentTree::Node::getChildren() const {
 
 	return _children;
 }
