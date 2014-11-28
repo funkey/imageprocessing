@@ -1,6 +1,5 @@
 file(GLOB imageprocessing_files "*.cpp")
-file(GLOB mser_files "mser/*.cpp")
 file(GLOB io_files "io/*.cpp")
 file(GLOB dgc_files "external/dgc/*.cpp")
-set(source_files ${imageprocessing_files} ${mser_files} ${io_files} ${dgc_files})
+set(source_files ${imageprocessing_files} ${io_files} ${dgc_files})
 define_module(imageprocessing OBJECT SOURCES ${source_files} LINKS util signals pipeline hdf5 vigra-git boost fftw fftwf INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/..)
