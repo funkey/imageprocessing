@@ -19,16 +19,15 @@ ConnectedComponent::ConnectedComponent(
 	_boundingBox(0, 0, 0, 0),
 	_center(0, 0),
 	_source(source),
-	_begin(begin),
-	_end(end) {
+	_pixelRange(begin, end) {
 
 	// if there is at least one pixel
 	if (begin != end) {
 
-		_boundingBox.minX = _begin->x;
-		_boundingBox.maxX = _begin->x + 1;
-		_boundingBox.minY = _begin->y;
-		_boundingBox.maxY = _begin->y + 1;
+		_boundingBox.minX = begin->x;
+		_boundingBox.maxX = begin->x + 1;
+		_boundingBox.minY = begin->y;
+		_boundingBox.maxY = begin->y + 1;
 	}
 
 	foreach (const util::point<unsigned int>& pixel, getPixels()) {
@@ -61,10 +60,10 @@ ConnectedComponent::getCenter() const {
 	return _center;
 }
 
-const std::pair<ConnectedComponent::const_iterator, ConnectedComponent::const_iterator>
+const std::pair<ConnectedComponent::const_iterator, ConnectedComponent::const_iterator>&
 ConnectedComponent::getPixels() const {
 
-	return std::make_pair(_begin, _end);
+	return _pixelRange;
 }
 
 const boost::shared_ptr<ConnectedComponent::pixel_list_type>
@@ -76,7 +75,7 @@ ConnectedComponent::getPixelList() const {
 unsigned int
 ConnectedComponent::getSize() const {
 
-	return _end - _begin;
+	return _pixelRange.second - _pixelRange.first;
 }
 
 const util::rect<int>&

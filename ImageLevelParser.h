@@ -60,7 +60,17 @@ public:
 		 * @param value
 		 *              The threshold value of the new child.
 		 */
-		void newChildComponent(Image::value_type value) {}
+		void newChildComponent(Image::value_type /*value*/) {}
+
+		/**
+		 * Set the pixel list that contains the pixel locations of each 
+		 * component. The iterators passed by finalizeComponent refer to indices 
+		 * in this pixel list.
+		 *
+		 * @param pixelList
+		 *              A pixel list shared between all components.
+		 */
+		void setPixelList(boost::shared_ptr<PixelList> pixelList) {}
 
 		/**
 		 * Invoked whenever the current component was extracted entirely.  
@@ -73,15 +83,11 @@ public:
 		 * @param begin, end
 		 *              Iterators into the pixel list that define the pixels of 
 		 *              the current component.
-		 *
-		 * @param pixelList
-		 *              A pixel list shared between all components.
 		 */
 		void finalizeComponent(
 				Image::value_type            value,
 				PixelList::const_iterator    begin,
-				PixelList::const_iterator    end,
-				boost::shared_ptr<PixelList> pixelList) {}
+				PixelList::const_iterator    end) {}
 	};
 
 	/**
@@ -310,6 +316,8 @@ void
 ImageLevelParser<Precision>::parse(VisitorType& visitor) {
 
 	LOG_ALL(imagelevelparserlog) << "parsing image" << std::endl;
+
+	visitor.setPixelList(_pixelList);
 
 	// Pretend we come from level MaxValue + 1...
 	_currentLevel = MaxValue + 1;
@@ -686,8 +694,7 @@ ImageLevelParser<Precision>::endComponent(Precision level, VisitorType& visitor)
 
 	visitor.finalizeComponent(
 			getOriginalValue(level),
-			begin, end,
-			_pixelList);
+			begin, end);
 }
 
 template <typename Precision>

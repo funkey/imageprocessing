@@ -19,7 +19,7 @@ public:
 
 private:
 
-	class ComponentVisitor {
+	class ComponentVisitor : public ImageLevelParser<Precision>::Visitor {
 
 	public:
 
@@ -33,27 +33,35 @@ private:
 			_prevBegin(0),
 			_prevEnd(0) {}
 
-		void newChildComponent(float value);
+		void setPixelList(boost::shared_ptr<PixelList> pixelList) { _pixelList = pixelList; }
 
 		void finalizeComponent(
 				float                        value,
 				PixelList::const_iterator    begin,
-				PixelList::const_iterator    end,
-				boost::shared_ptr<PixelList> pixelList);
+				PixelList::const_iterator    end);
 
-		boost::shared_ptr<ComponentTree::Node> getRoot() { return _rootNode; }
+		boost::shared_ptr<ComponentTree::Node> getRoot() { assert(_roots.size() == 1); return _roots.top(); }
 
 	private:
 
-		boost::shared_ptr<Image>         _image;
+		// is the first range contained in the second?
+		inline bool contained(
+				const std::pair<PixelList::const_iterator, PixelList::const_iterator>& a,
+				const std::pair<PixelList::const_iterator, PixelList::const_iterator>& b) {
 
-		boost::shared_ptr<ComponentTree::Node> _rootNode;
-		boost::shared_ptr<ComponentTree::Node> _currentNode;
+			return (a.first >= b.first && a.second <= b.second);
+		}
+
+		boost::shared_ptr<Image>     _image;
+		boost::shared_ptr<PixelList> _pixelList;
+
+		// stack of open root nodes while constructing the tree
+		std::stack<boost::shared_ptr<ComponentTree::Node> > _roots;
 
 		unsigned int _minSize;
 		unsigned int _maxSize;
 
-		// extents of the previous component
+		// extents of the previous component to detect changes
 		PixelList::const_iterator _prevBegin;
 		PixelList::const_iterator _prevEnd;
 	};
@@ -71,100 +79,46 @@ private:
 
 template <typename Precision>
 void
-ComponentTreeExtractor<Precision>::ComponentVisitor::newChildComponent(float value) {
-
-	LOG_ALL(componenttreeextractorlog)
-			<< "create new component for value " << value << std::endl;
-
-	LOG_ALL(componenttreeextractorlog)
-			<< "current node is " << _currentNode << std::endl;
-
-	if (!_currentNode) {
-
-		LOG_ALL(componenttreeextractorlog)
-				<< "this is the first component -- I make it the root" << std::endl;
-
-		// create the root node
-		_currentNode = boost::make_shared<ComponentTree::Node>();
-		_rootNode    = _currentNode;
-
-	} else {
-
-		// create a child of the current node and go down
-		boost::shared_ptr<ComponentTree::Node> newNode = boost::make_shared<ComponentTree::Node>();
-
-		_currentNode->addChild(newNode);
-		newNode->setParent(_currentNode);
-
-		_currentNode = newNode;
-
-		LOG_ALL(componenttreeextractorlog)
-				<< "setting the new current node to " << _currentNode << std::endl;
-		LOG_ALL(componenttreeextractorlog)
-				<< "parent of new current node is " << _currentNode->getParent() << std::endl;
-	}
-}
-
-template <typename Precision>
-void
 ComponentTreeExtractor<Precision>::ComponentVisitor::finalizeComponent(
 		float                        value,
 		PixelList::const_iterator    begin,
-		PixelList::const_iterator    end,
-		boost::shared_ptr<PixelList> pixelList) {
+		PixelList::const_iterator    end) {
+
+	size_t size    = end - begin;
+	bool   changed = (begin != _prevBegin || end != _prevEnd);
+
+	_prevBegin = begin;
+	_prevEnd   = end;
+
+	bool valid = (size >= _minSize && (_maxSize == 0 || size < _maxSize) && changed);
+
+	if (!valid)
+		return;
 
 	LOG_ALL(componenttreeextractorlog)
 			<< "finalize component with value " << value << std::endl;
 
-	assert(_currentNode);
+	// create a component tree node
+	boost::shared_ptr<ComponentTree::Node> node
+			= boost::make_shared<ComponentTree::Node>(
+					boost::make_shared<ConnectedComponent>(
+							_image,
+							value,
+							_pixelList,
+							begin,
+							end));
 
-	boost::shared_ptr<ComponentTree::Node> parent = _currentNode->getParent();
-	size_t size = end - begin;
+	// make all open root nodes that are subsets children of this component
+	while (!_roots.empty() && contained(_roots.top()->getComponent()->getPixels(), std::make_pair(begin, end))) {
 
-	// is this an invalid component that is not the root node?
-	if (parent && (
-			size < _minSize ||
-			(_maxSize > 0 && size >= _maxSize) ||
-			(begin == _prevBegin && end == _prevEnd))
-		) {
+		node->addChild(_roots.top());
+		_roots.top()->setParent(node);
 
-		LOG_ALL(componenttreeextractorlog)
-				<< "I don't want this component (" << size
-				<< " not in [" << _minSize << ", " << _maxSize
-				<< ") and not the root node) -- skip it" << std::endl;
-
-		parent->removeChild(_currentNode);
-		foreach (boost::shared_ptr<ComponentTree::Node> child, _currentNode->getChildren()) {
-
-			child->setParent(parent);
-			parent->addChild(child);
-		}
-
-	// valid component or root node (that we want to keep anyway)
-	} else {
-
-		// create a connected component
-		boost::shared_ptr<ConnectedComponent> component =
-				boost::make_shared<ConnectedComponent>(
-						_image,
-						value,
-						pixelList,
-						begin,
-						end);
-
-		// set it to the current node
-		_currentNode->setComponent(component);
-
-		LOG_ALL(componenttreeextractorlog)
-				<< "setting the new current node to " << _currentNode << std::endl;
+		_roots.pop();
 	}
 
-	// make the parent of the current component the new current component
-	// (if this was the root node, the new current node should point to 0)
-	_currentNode = parent;
-
-	_prevBegin = begin;
-	_prevEnd   = end;
+	// put the new node on the stack
+	_roots.push(node);
 }
 
 template <typename Precision>

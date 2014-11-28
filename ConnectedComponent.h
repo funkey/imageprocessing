@@ -38,7 +38,7 @@ public:
 	/**
 	 * Get a begin and end iterator to the pixels that belong to this component.
 	 */
-	const std::pair<const_iterator, const_iterator> getPixels() const;
+	const std::pair<const_iterator, const_iterator>& getPixels() const;
 
 	/**
 	 * Get the pixel list this component is using.
@@ -119,8 +119,7 @@ private:
 
 	// the range of the pixels in _pixels that belong to this component (can
 	// be all of them, if the pixel lists are not shared)
-	const_iterator _begin;
-	const_iterator _end;
+	std::pair<const_iterator, const_iterator> _pixelRange;
 
 	// a binary map of the size of the bounding box to indicate which pixels
 	// belong to this component
