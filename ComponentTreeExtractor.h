@@ -167,7 +167,13 @@ ComponentTreeExtractor<Precision>::updateOutputs() {
 
 	// create an image level parser
 	typename ImageLevelParser<Precision>::Parameters parameters;
-	parameters.darkToBright = (_parameters.isSet() ? _parameters->darkToBright : true);
+	if (_parameters.isSet()) {
+
+		parameters.darkToBright = _parameters->darkToBright;
+		parameters.minIntensity = _parameters->minIntensity;
+		parameters.maxIntensity = _parameters->maxIntensity;
+	}
+
 	ImageLevelParser<Precision> parser(*_image, parameters);
 
 	// let the visitor run over the components

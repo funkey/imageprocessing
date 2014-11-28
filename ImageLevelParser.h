@@ -35,10 +35,21 @@ public:
 	 */
 	struct Parameters {
 
-		Parameters() : darkToBright(true) {}
+		Parameters() : darkToBright(true), minIntensity(0), maxIntensity(0) {}
 
 		// start processing the dark regions
 		bool darkToBright;
+
+		/**
+		 * The min and max intensity of the image, used for discretization into 
+		 * the Precision type. The default is 0 for both, in which case the 
+		 * image is inspected to find them. You can set them to avoid this 
+		 * inspection or to ensure that the values of the connected components 
+		 * math across different images that might have different intensity 
+		 * extrema.
+		 */
+		float minIntensity;
+		float maxIntensity;
 	};
 
 	/**
@@ -258,6 +269,9 @@ private:
 
 	// discretized version of the input image
 	vigra::MultiArray<2, Precision> _image;
+
+	// min and max value of the original image
+	float _min, _max;
 
 	// parameters of the parsing algorithm
 	Parameters _parameters;
@@ -772,16 +786,37 @@ ImageLevelParser<Precision>::discretizeImage(const Image& image) {
 
 	_image.reshape(image.shape());
 
+	if (_parameters.minIntensity == 0 && _parameters.maxIntensity == 0) {
+
+		image.minmax(&_min, &_max);
+
+	} else {
+
+		_min = _parameters.minIntensity;
+		_max = _parameters.maxIntensity;
+	}
+
+	// in case the whole image has the same intensity
+	if (_max - _min == 0) {
+
+		_min = 0;
+		_max = 1;
+	}
+
+	using namespace vigra::functor;
+
 	if (_parameters.darkToBright)
 		vigra::transformImage(
 				srcImageRange(image),
 				destImage(_image),
-				vigra::functor::Arg1()*vigra::functor::Param(MaxValue));
+				// d = (v-min)/(max-min)*MAX
+				( (Arg1()-Param(_min)) / Param(_max-_min) )*vigra::functor::Param(MaxValue));
 	else // invert the image on-the-fly
 		vigra::transformImage(
 				srcImageRange(image),
 				destImage(_image),
-				vigra::functor::Param(MaxValue) - vigra::functor::Arg1()*vigra::functor::Param(MaxValue));
+				// d = MAX - (v-min)/(max-min)*MAX
+				Param(MaxValue) - ( (Arg1()-Param(_min)) / Param(_max-_min) )*Param(MaxValue));
 }
 
 template <typename Precision>
@@ -789,9 +824,11 @@ float
 ImageLevelParser<Precision>::getOriginalValue(Precision value) {
 
 	if (_parameters.darkToBright)
-		return static_cast<float>(value)/MaxValue;
+		// v = (d/MAX)*(max-min)+min
+		return (static_cast<float>(value)/MaxValue)*(_max - _min) + _min;
 	else
-		return static_cast<float>(MaxValue - value)/MaxValue;
+		// v = ((MAX-d)/MAX)*(max-min)+min
+		return (static_cast<float>(MaxValue - value)/MaxValue)*(_max - _min) + _min;
 }
 
 #endif // IMAGEPROCESSING_IMAGE_LEVEL_PARSER_H__
