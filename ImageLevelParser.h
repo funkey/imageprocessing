@@ -299,7 +299,7 @@ ImageLevelParser<Precision>::ImageLevelParser(const Image& image, const Paramete
 	_visited.reshape(image.shape());
 	_visited = false;
 
-	LOG_DEBUG(imagelevelparserlog) << "initializing for image of size " << image.size() << std::endl;
+	LOG_ALL(imagelevelparserlog) << "initializing for image of size " << image.size() << std::endl;
 
 	this->discretizeImage(image);
 }
@@ -309,7 +309,7 @@ template <typename VisitorType>
 void
 ImageLevelParser<Precision>::parse(VisitorType& visitor) {
 
-	LOG_DEBUG(imagelevelparserlog) << "parsing image" << std::endl;
+	LOG_ALL(imagelevelparserlog) << "parsing image" << std::endl;
 
 	// Pretend we come from level MaxValue + 1...
 	_currentLevel = MaxValue + 1;
@@ -318,7 +318,7 @@ ImageLevelParser<Precision>::parse(VisitorType& visitor) {
 	// are put on the stack.
 	gotoLocation(point_type(0, 0), visitor);
 
-	LOG_DEBUG(imagelevelparserlog)
+	LOG_ALL(imagelevelparserlog)
 			<< "starting at " << _currentLocation
 			<< " with level " << (int)_currentLevel
 			<< std::endl;
@@ -329,7 +329,7 @@ ImageLevelParser<Precision>::parse(VisitorType& visitor) {
 		// fill the current level
 		fillLevel(visitor);
 
-		LOG_DEBUG(imagelevelparserlog)
+		LOG_ALL(imagelevelparserlog)
 				<< "filled current level"
 				<< std::endl;
 
@@ -337,7 +337,7 @@ ImageLevelParser<Precision>::parse(VisitorType& visitor) {
 		// boundary list
 		if (!gotoHigherLevel(visitor)) {
 
-			LOG_DEBUG(imagelevelparserlog)
+			LOG_ALL(imagelevelparserlog)
 					<< "there are no more higher levels -- we are done"
 					<< std::endl;
 
