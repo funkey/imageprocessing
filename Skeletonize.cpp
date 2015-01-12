@@ -1,11 +1,7 @@
-#include <boost/timer/timer.hpp>
 #include <vigra/distancetransform.hxx>
 #include <vigra/multi_pointoperators.hxx>
 #include <vigra/functorexpression.hxx>
-#include <util/Logger.h>
 #include "Skeletonize.h"
-
-logger::LogChannel skeletonizelog("skeletonizelog", "[Skeletonize] ");
 
 Skeletonize::Skeletonize() :
 		// offsets in patch centered at (1, 1, 1)
@@ -16,61 +12,7 @@ Skeletonize::Skeletonize() :
 		U(1, 1, 2),
 		B(1, 1, 0) {
 
-	registerInput(_stack, "image stack");
-	registerOutput(_skeleton, "skeleton");
-
 	createEulerLut();
-}
-
-void
-Skeletonize::updateOutputs() {
-
-	unsigned int width  = _stack->width();
-	unsigned int height = _stack->height();
-	unsigned int depth  = _stack->size();
-
-	vigra::MultiArray<3, int> volume(vigra::Shape3(width, height, depth));
-
-	// fill volume image by image
-	for (unsigned int i = 0; i < depth; i++)
-		vigra::copyMultiArray(
-				*(*_stack)[i],
-				volume.bind<2>(i));
-
-	{
-		boost::timer::auto_cpu_timer t;
-
-		skeletonize(volume);
-	}
-
-	LOG_USER(skeletonizelog) << "preparing output image stack" << std::endl;
-
-	prepareSkeletonImage();
-
-	LOG_USER(skeletonizelog) << "copy skeletons" << std::endl;
-
-	// read back output stack
-	for (unsigned int i = 0; i < depth; i++)
-		vigra::copyMultiArray(
-				volume.bind<2>(i),
-				*(*_skeleton)[i]);
-
-	LOG_USER(skeletonizelog) << "done" << std::endl;
-}
-
-void
-Skeletonize::prepareSkeletonImage() {
-
-	if (!_skeleton                               ||
-		 _skeleton->width()  != _stack->width()  ||
-		 _skeleton->height() != _stack->height() ||
-		 _skeleton->size()   != _stack->size()) {
-
-		_skeleton = new ImageStack();
-
-		for (unsigned int i = 0; i < _stack->size(); i++)
-			_skeleton->add(boost::make_shared<Image>(_stack->width(), _stack->height()));
-	}
 }
 
 void
@@ -94,11 +36,7 @@ Skeletonize::skeletonize(view_t& image){
 
 		unchangedBorders = 0;
 
-		LOG_ALL(skeletonizelog) << "eroding image" << std::endl;
-
 		for (_currentBorder = 1; _currentBorder <= 6; _currentBorder++) {
-
-			LOG_ALL(skeletonizelog) << "considering border " << _currentBorder << std::endl;
 
 			// iterate over all pixels
 			for (i[2] = 0; i[2] < size[2]; i[2]++)
@@ -111,16 +49,13 @@ Skeletonize::skeletonize(view_t& image){
 				if (!(image[i] > 0 || image[i] < 0))
 					continue; // current point is already background 
 
-				LOG_ALL(skeletonizelog) << "pixel " << i << " is a foreground pixel" << std::endl;
-
 				// get the 3x3x3 patch around i
 				getPatch(image, i, patch);
 
 				if (canBeDeleted(patch)) {
 
-					LOG_ALL(skeletonizelog) << "this pixel can be deleted -- storing in simple border points" << std::endl;
-
-					// add all simple border points to a list for sequential re-checking
+					// add all simple border points to a list for sequential 
+					// re-checking
 					markAsSimpleBorderPoint(i);
 				}
 			}
@@ -186,11 +121,8 @@ Skeletonize::isArchEnd(const view_t& patch) {
 	for (view_t::iterator j = patch.begin(); j != patch.end(); j++)
 		numberOfNeighbors += (*j == 0 ? 0 : 1);
 
-	if (numberOfNeighbors == 1) {
-
-		LOG_ALL(skeletonizelog) << "this pixel is the end of an arch" << std::endl;
+	if (numberOfNeighbors == 1)
 		return true;
-	}
 
 	return false;
 }
@@ -210,8 +142,6 @@ Skeletonize::deleteSimpleBorderPoints(view_t& image) {
 	std::vector<vigra::Shape3>::iterator j;
 	for (j = _simpleBorderPoints.begin(); j != _simpleBorderPoints.end(); j++) {
 
-		LOG_ALL(skeletonizelog) << "attempting to delete point " << *j << std::endl;
-
 		// Check if neighborhood would still be connected
 		getPatch(image, *j, patch);
 		if (isSimplePoint(patch)) {
@@ -220,11 +150,6 @@ Skeletonize::deleteSimpleBorderPoints(view_t& image) {
 			image[*j] = 0;
 			deleted++;
 
-			LOG_ALL(skeletonizelog) << "deleted!" << std::endl;
-
-		} else {
-
-			LOG_ALL(skeletonizelog) << "not a simple point anymore" << std::endl;
 		}
 	}
 
@@ -525,15 +450,7 @@ Skeletonize::isEulerInvariant(const view_t& patch){
 
 	eulerCharacteristic += _lut[n];
 
-	if (eulerCharacteristic == 0) {
-
-		return true;
-
-	} else {
-
-		LOG_ALL(skeletonizelog) << "this pixel is not Euler invariant" << std::endl;
-		return false;
-	}
+	return (eulerCharacteristic == 0);
 }
 
 bool
@@ -602,11 +519,9 @@ Skeletonize::isSimplePoint(const view_t& patch){
 
 			label++;
 
-			if (label - 2 >= 2) {
-
-				LOG_ALL(skeletonizelog) << "this pixel is not a simple point" << std::endl;
+			if (label - 2 >= 2)
+				// not a simple point
 				return false;
-			}
 		}
 	}
 

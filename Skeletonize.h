@@ -1,31 +1,22 @@
 #ifndef IMAGEPROCESSING_SKELETONIZE_H__
 #define IMAGEPROCESSING_SKELETONIZE_H__
 
-#include <pipeline/SimpleProcessNode.h>
-#include "ImageStack.h"
+#include <vigra/multi_array.hxx>
 
-class Skeletonize : public pipeline::SimpleProcessNode<> {
+class Skeletonize {
 
 public:
 
-	Skeletonize();
-
-private:
-
 	typedef vigra::MultiArrayView<3, int> view_t;
 
-	void updateOutputs();
-
-	/**
-	 * Copy the input image in an intermediate data structure to find the 
-	 * skeleton.
-	 */
-	void prepareSkeletonImage();
+	Skeletonize();
 
 	/**
 	 * Iteratively erode the skeleton image.
 	 */
 	void skeletonize(view_t& image);
+
+private:
 
 	/**
 	 * Check, whether a foreground pixel (described by the patch around it) can 
@@ -100,9 +91,6 @@ private:
 	 * cube.
 	 */
 	void labelComponentsAfterRemoval(int octant, int label, int* cube);
-
-	pipeline::Input<ImageStack>  _stack;
-	pipeline::Output<ImageStack> _skeleton;
 
 	// 3D offsets
 	vigra::Shape3 N; // north
