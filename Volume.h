@@ -14,9 +14,10 @@ public:
 		_boundingBoxDirty(true) {}
 
 	/**
-	 * Set the bounding box of this volume.
+	 * Explicitly set the bounding box of this volume. This marks the bounding 
+	 * box as non-dirty.
 	 */
-	void setBoundingBox(const BoundingBox& box) { _boundingBox = box; }
+	void setBoundingBox(const BoundingBox& box) { _boundingBox = box; _boundingBoxDirty = false; }
 
 	/**
 	 * Get the bounding box of this volume.
