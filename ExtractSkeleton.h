@@ -24,7 +24,7 @@ private:
 	pipeline::Input<ImageStack>  _stack;
 	pipeline::Output<ImageStack> _skeleton;
 
-	Skeletonize _skeletonize;
+	Skeletonize<int> _skeletonize;
 };
 
 
