@@ -12,6 +12,7 @@ class ExplicitVolume : public DiscreteVolume {
 
 public:
 
+	typedef ValueType                       value_type;
 	typedef vigra::MultiArray<3, ValueType> data_type;
 
 	/**
