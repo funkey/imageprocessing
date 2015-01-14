@@ -94,7 +94,7 @@ private:
 	 * Label the connected components after the center pixel is removed in the 
 	 * cube.
 	 */
-	void labelComponentsAfterRemoval(int octant, int label, int* cube);
+	void labelComponentsAfterRemoval(int octant, unsigned char label);
 
 	// 3D offsets
 	vigra::Shape3 N; // north
@@ -108,7 +108,7 @@ private:
 	int _lut[256];
 
 	// copy patch for labeling
-	int _cube[26];
+	unsigned char _cube[26];
 
 	// is the image volumetric?
 	bool _isVolume;
@@ -585,19 +585,36 @@ template <typename ValueType>
 bool
 Skeletonize<ValueType>::isSimplePoint(const view_t& patch){
 
+	/* A point is simple, if its removal from the 3x3x3 cube that surrounds it 
+	 * would not change the number of connected components in this cube.  
+	 * Initially, the number of connected components is always one (since the 
+	 * point itself belongs to an object, and all other points are neighbors).
+	 *
+	 * In this function, the number of connected components in the cube are 
+	 * counted, pretending the point under consideration has been removed. If 
+	 * the number of components is different from 1, the point is not simple.
+	 */
+
 	for (int i = 0; i < 13; i++) // i =  0..12 -> _cube[0..12]
-		_cube[i] = (patch[i] == 0 ? 0 : 1);
+		_cube[i] = (patch[i] == 0 ? 0 : 255);
 	// i != 13 : ignore center pixel when counting (see [Lee94])
 	for(int i = 14; i < 27; i++) // i = 14..26 -> _cube[13..25]
-		_cube[i-1] = (patch[i] == 0 ? 0 : 1);
+		_cube[i-1] = (patch[i] == 0 ? 0 : 255);
 
-	// set initial label
-	int label = 2;
+	unsigned char components = 0;
 
 	// for all points in the _cube
 	for (int i = 0; i < 26; i++) {
 
-		if (_cube[i] == 1) { // voxel has not been labelled yet
+		if (_cube[i] == 255) {
+
+			// voxel has not been labelled yet, we found a new component
+			components++;
+
+			// as soon as we found two components...
+			if (components == 2)
+				// ...not a simple point
+				return false;
 
 			// start recursion with any octant that contains the point i
 			switch (i) {
@@ -609,395 +626,388 @@ Skeletonize<ValueType>::isSimplePoint(const view_t& patch){
 				case 9:
 				case 10:
 				case 12:
-					labelComponentsAfterRemoval(1, label, _cube);
+					labelComponentsAfterRemoval(1, components);
 					break;
 				case 2:
 				case 5:
 				case 11:
 				case 13:
-					labelComponentsAfterRemoval(2, label, _cube);
+					labelComponentsAfterRemoval(2, components);
 					break;
 				case 6:
 				case 7:
 				case 14:
 				case 15:
-					labelComponentsAfterRemoval(3, label, _cube);
+					labelComponentsAfterRemoval(3, components);
 					break;
 				case 8:
 				case 16:
-					labelComponentsAfterRemoval(4, label, _cube);
+					labelComponentsAfterRemoval(4, components);
 					break;
 				case 17:
 				case 18:
 				case 20:
 				case 21:
-					labelComponentsAfterRemoval(5, label, _cube);
+					labelComponentsAfterRemoval(5, components);
 					break;
 				case 19:
 				case 22:
-					labelComponentsAfterRemoval(6, label, _cube);
+					labelComponentsAfterRemoval(6, components);
 					break;
 				case 23:
 				case 24:
-					labelComponentsAfterRemoval(7, label, _cube);
+					labelComponentsAfterRemoval(7, components);
 					break;
 				case 25:
-					labelComponentsAfterRemoval(8, label, _cube);
+					labelComponentsAfterRemoval(8, components);
 					break;
 			}
-
-			label++;
-
-			if (label - 2 >= 2)
-				// not a simple point
-				return false;
 		}
 	}
 
-	//return label-2; in [Lee94] if the number of connected compontents would be needed
-	return true;
+	return (components == 1);
 }
 
 template <typename ValueType>
 void
-Skeletonize<ValueType>::labelComponentsAfterRemoval(int octant, int label, int* _cube) {
+Skeletonize<ValueType>::labelComponentsAfterRemoval(int octant, unsigned char label) {
 
 	// check if there are points in the octant with value 1
 	if (octant == 1) {
 
 		// set points in this octant to current label
 		// and recurseive labeling of adjacent octants
-		if (_cube[0] == 1)
+		if (_cube[0] == 255)
 			_cube[0] = label;
-		if (_cube[1] == 1) {
+		if (_cube[1] == 255) {
 		
 			_cube[1] = label;
-			labelComponentsAfterRemoval(2, label, _cube);
+			labelComponentsAfterRemoval(2, label);
 		}
-		if (_cube[3] == 1) {
+		if (_cube[3] == 255) {
 		
 			_cube[3] = label;
-			labelComponentsAfterRemoval(3, label, _cube);
+			labelComponentsAfterRemoval(3, label);
 		}
-		if (_cube[4] == 1) {
+		if (_cube[4] == 255) {
 		
 			_cube[4] = label;
-			labelComponentsAfterRemoval(2, label, _cube);
-			labelComponentsAfterRemoval(3, label, _cube);
-			labelComponentsAfterRemoval(4, label, _cube);
+			labelComponentsAfterRemoval(2, label);
+			labelComponentsAfterRemoval(3, label);
+			labelComponentsAfterRemoval(4, label);
 		}
-		if (_cube[9] == 1) {
+		if (_cube[9] == 255) {
 		
 			_cube[9] = label;
-			labelComponentsAfterRemoval(5, label, _cube);
+			labelComponentsAfterRemoval(5, label);
 		}
-		if (_cube[10] == 1) {
+		if (_cube[10] == 255) {
 		
 			_cube[10] = label;
-			labelComponentsAfterRemoval(2, label, _cube);
-			labelComponentsAfterRemoval(5, label, _cube);
-			labelComponentsAfterRemoval(6, label, _cube);
+			labelComponentsAfterRemoval(2, label);
+			labelComponentsAfterRemoval(5, label);
+			labelComponentsAfterRemoval(6, label);
 		}
-		if (_cube[12] == 1) {
+		if (_cube[12] == 255) {
 		
 			_cube[12] = label;
-			labelComponentsAfterRemoval(3, label, _cube);
-			labelComponentsAfterRemoval(5, label, _cube);
-			labelComponentsAfterRemoval(7, label, _cube);
+			labelComponentsAfterRemoval(3, label);
+			labelComponentsAfterRemoval(5, label);
+			labelComponentsAfterRemoval(7, label);
 		}
 	}
 
 	if (octant==2) {
 	
-		if (_cube[1] == 1) {
+		if (_cube[1] == 255) {
 		
 			_cube[1] = label;
-			labelComponentsAfterRemoval(1, label, _cube);
+			labelComponentsAfterRemoval(1, label);
 		}
-		if (_cube[4] == 1) {
+		if (_cube[4] == 255) {
 		
 			_cube[4] = label;
-			labelComponentsAfterRemoval(1, label, _cube);
-			labelComponentsAfterRemoval(3, label, _cube);
-			labelComponentsAfterRemoval(4, label, _cube);
+			labelComponentsAfterRemoval(1, label);
+			labelComponentsAfterRemoval(3, label);
+			labelComponentsAfterRemoval(4, label);
 		}
-		if (_cube[10] == 1) {
+		if (_cube[10] == 255) {
 		
 			_cube[10] = label;
-			labelComponentsAfterRemoval(1, label, _cube);
-			labelComponentsAfterRemoval(5, label, _cube);
-			labelComponentsAfterRemoval(6, label, _cube);
+			labelComponentsAfterRemoval(1, label);
+			labelComponentsAfterRemoval(5, label);
+			labelComponentsAfterRemoval(6, label);
 		}
-		if (_cube[2] == 1)
+		if (_cube[2] == 255)
 			_cube[2] = label;
-		if (_cube[5] == 1) {
+		if (_cube[5] == 255) {
 		
 			_cube[5] = label;
-			labelComponentsAfterRemoval(4, label, _cube);
+			labelComponentsAfterRemoval(4, label);
 		}
-		if (_cube[11] == 1) {
+		if (_cube[11] == 255) {
 		
 			_cube[11] = label;
-			labelComponentsAfterRemoval(6, label, _cube);
+			labelComponentsAfterRemoval(6, label);
 		}
-		if (_cube[13] == 1) {
+		if (_cube[13] == 255) {
 		
 			_cube[13] = label;
-			labelComponentsAfterRemoval(4, label, _cube);
-			labelComponentsAfterRemoval(6, label, _cube);
-			labelComponentsAfterRemoval(8, label, _cube);
+			labelComponentsAfterRemoval(4, label);
+			labelComponentsAfterRemoval(6, label);
+			labelComponentsAfterRemoval(8, label);
 		}
 	}
 
 	if (octant==3) {
 	
-		if (_cube[3] == 1) {
+		if (_cube[3] == 255) {
 		
 			_cube[3] = label;
-			labelComponentsAfterRemoval(1, label, _cube);
+			labelComponentsAfterRemoval(1, label);
 		}
-		if (_cube[4] == 1) {
+		if (_cube[4] == 255) {
 		
 			_cube[4] = label;
-			labelComponentsAfterRemoval(1, label, _cube);
-			labelComponentsAfterRemoval(2, label, _cube);
-			labelComponentsAfterRemoval(4, label, _cube);
+			labelComponentsAfterRemoval(1, label);
+			labelComponentsAfterRemoval(2, label);
+			labelComponentsAfterRemoval(4, label);
 		}
-		if (_cube[12] == 1) {
+		if (_cube[12] == 255) {
 		
 			_cube[12] = label;
-			labelComponentsAfterRemoval(1, label, _cube);
-			labelComponentsAfterRemoval(5, label, _cube);
-			labelComponentsAfterRemoval(7, label, _cube);
+			labelComponentsAfterRemoval(1, label);
+			labelComponentsAfterRemoval(5, label);
+			labelComponentsAfterRemoval(7, label);
 		}
-		if (_cube[6] == 1)
+		if (_cube[6] == 255)
 			_cube[6] = label;
-		if (_cube[7] == 1) {
+		if (_cube[7] == 255) {
 		
 			_cube[7] = label;
-			labelComponentsAfterRemoval(4, label, _cube);
+			labelComponentsAfterRemoval(4, label);
 		}
-		if (_cube[14] == 1) {
+		if (_cube[14] == 255) {
 		
 			_cube[14] = label;
-			labelComponentsAfterRemoval(7, label, _cube);
+			labelComponentsAfterRemoval(7, label);
 		}
-		if (_cube[15] == 1) {
+		if (_cube[15] == 255) {
 		
 			_cube[15] = label;
-			labelComponentsAfterRemoval(4, label, _cube);
-			labelComponentsAfterRemoval(7, label, _cube);
-			labelComponentsAfterRemoval(8, label, _cube);
+			labelComponentsAfterRemoval(4, label);
+			labelComponentsAfterRemoval(7, label);
+			labelComponentsAfterRemoval(8, label);
 		}
 	}
 
 	if (octant==4) {
 	
-		if (_cube[4] == 1) {
+		if (_cube[4] == 255) {
 		
 			_cube[4] = label;
-			labelComponentsAfterRemoval(1, label, _cube);
-			labelComponentsAfterRemoval(2, label, _cube);
-			labelComponentsAfterRemoval(3, label, _cube);
+			labelComponentsAfterRemoval(1, label);
+			labelComponentsAfterRemoval(2, label);
+			labelComponentsAfterRemoval(3, label);
 		}
-		if (_cube[5] == 1) {
+		if (_cube[5] == 255) {
 		
 			_cube[5] = label;
-			labelComponentsAfterRemoval(2, label, _cube);
+			labelComponentsAfterRemoval(2, label);
 		}
-		if (_cube[13] == 1) {
+		if (_cube[13] == 255) {
 		
 			_cube[13] = label;
-			labelComponentsAfterRemoval(2, label, _cube);
-			labelComponentsAfterRemoval(6, label, _cube);
-			labelComponentsAfterRemoval(8, label, _cube);
+			labelComponentsAfterRemoval(2, label);
+			labelComponentsAfterRemoval(6, label);
+			labelComponentsAfterRemoval(8, label);
 		}
-		if (_cube[7] == 1) {
+		if (_cube[7] == 255) {
 		
 			_cube[7] = label;
-			labelComponentsAfterRemoval(3, label, _cube);
+			labelComponentsAfterRemoval(3, label);
 		}
-		if (_cube[15] == 1) {
+		if (_cube[15] == 255) {
 		
 			_cube[15] = label;
-			labelComponentsAfterRemoval(3, label, _cube);
-			labelComponentsAfterRemoval(7, label, _cube);
-			labelComponentsAfterRemoval(8, label, _cube);
+			labelComponentsAfterRemoval(3, label);
+			labelComponentsAfterRemoval(7, label);
+			labelComponentsAfterRemoval(8, label);
 		}
-		if (_cube[8] == 1)
+		if (_cube[8] == 255)
 			_cube[8] = label;
-		if (_cube[16] == 1) {
+		if (_cube[16] == 255) {
 		
 			_cube[16] = label;
-			labelComponentsAfterRemoval(8, label, _cube);
+			labelComponentsAfterRemoval(8, label);
 		}
 	}
 
 	if (octant==5) {
 	
-		if (_cube[9] == 1) {
+		if (_cube[9] == 255) {
 		
 			_cube[9] = label;
-			labelComponentsAfterRemoval(1, label, _cube);
+			labelComponentsAfterRemoval(1, label);
 		}
-		if (_cube[10] == 1) {
+		if (_cube[10] == 255) {
 		
 			_cube[10] = label;
-			labelComponentsAfterRemoval(1, label, _cube);
-			labelComponentsAfterRemoval(2, label, _cube);
-			labelComponentsAfterRemoval(6, label, _cube);
+			labelComponentsAfterRemoval(1, label);
+			labelComponentsAfterRemoval(2, label);
+			labelComponentsAfterRemoval(6, label);
 		}
-		if (_cube[12] == 1) {
+		if (_cube[12] == 255) {
 		
 			_cube[12] = label;
-			labelComponentsAfterRemoval(1, label, _cube);
-			labelComponentsAfterRemoval(3, label, _cube);
-			labelComponentsAfterRemoval(7, label, _cube);
+			labelComponentsAfterRemoval(1, label);
+			labelComponentsAfterRemoval(3, label);
+			labelComponentsAfterRemoval(7, label);
 		}
-		if (_cube[17] == 1)
+		if (_cube[17] == 255)
 			_cube[17] = label;
-		if (_cube[18] == 1) {
+		if (_cube[18] == 255) {
 		
 			_cube[18] = label;
-			labelComponentsAfterRemoval(6, label, _cube);
+			labelComponentsAfterRemoval(6, label);
 		}
-		if (_cube[20] == 1) {
+		if (_cube[20] == 255) {
 		
 			_cube[20] = label;
-			labelComponentsAfterRemoval(7, label, _cube);
+			labelComponentsAfterRemoval(7, label);
 		}
-		if (_cube[21] == 1) {
+		if (_cube[21] == 255) {
 		
 			_cube[21] = label;
-			labelComponentsAfterRemoval(6, label, _cube);
-			labelComponentsAfterRemoval(7, label, _cube);
-			labelComponentsAfterRemoval(8, label, _cube);
+			labelComponentsAfterRemoval(6, label);
+			labelComponentsAfterRemoval(7, label);
+			labelComponentsAfterRemoval(8, label);
 		}
 	}
 
 	if (octant==6) {
 	
-		if (_cube[10] == 1) {
+		if (_cube[10] == 255) {
 		
 			_cube[10] = label;
-			labelComponentsAfterRemoval(1, label, _cube);
-			labelComponentsAfterRemoval(2, label, _cube);
-			labelComponentsAfterRemoval(5, label, _cube);
+			labelComponentsAfterRemoval(1, label);
+			labelComponentsAfterRemoval(2, label);
+			labelComponentsAfterRemoval(5, label);
 		}
-		if (_cube[11] == 1) {
+		if (_cube[11] == 255) {
 		
 			_cube[11] = label;
-			labelComponentsAfterRemoval(2, label, _cube);
+			labelComponentsAfterRemoval(2, label);
 		}
-		if (_cube[13] == 1) {
+		if (_cube[13] == 255) {
 		
 			_cube[13] = label;
-			labelComponentsAfterRemoval(2, label, _cube);
-			labelComponentsAfterRemoval(4, label, _cube);
-			labelComponentsAfterRemoval(8, label, _cube);
+			labelComponentsAfterRemoval(2, label);
+			labelComponentsAfterRemoval(4, label);
+			labelComponentsAfterRemoval(8, label);
 		}
-		if (_cube[18] == 1) {
+		if (_cube[18] == 255) {
 		
 			_cube[18] = label;
-			labelComponentsAfterRemoval(5, label, _cube);
+			labelComponentsAfterRemoval(5, label);
 		}
-		if (_cube[21] == 1) {
+		if (_cube[21] == 255) {
 		
 			_cube[21] = label;
-			labelComponentsAfterRemoval(5, label, _cube);
-			labelComponentsAfterRemoval(7, label, _cube);
-			labelComponentsAfterRemoval(8, label, _cube);
+			labelComponentsAfterRemoval(5, label);
+			labelComponentsAfterRemoval(7, label);
+			labelComponentsAfterRemoval(8, label);
 		}
-		if (_cube[19] == 1)
+		if (_cube[19] == 255)
 			_cube[19] = label;
-		if (_cube[22] == 1) {
+		if (_cube[22] == 255) {
 		
 			_cube[22] = label;
-			labelComponentsAfterRemoval(8, label, _cube);
+			labelComponentsAfterRemoval(8, label);
 		}
 	}
 
 	if (octant==7) {
 	
-		if (_cube[12] == 1) {
+		if (_cube[12] == 255) {
 		
 			_cube[12] = label;
-			labelComponentsAfterRemoval(1, label, _cube);
-			labelComponentsAfterRemoval(3, label, _cube);
-			labelComponentsAfterRemoval(5, label, _cube);
+			labelComponentsAfterRemoval(1, label);
+			labelComponentsAfterRemoval(3, label);
+			labelComponentsAfterRemoval(5, label);
 		}
-		if (_cube[14] == 1) {
+		if (_cube[14] == 255) {
 		
 			_cube[14] = label;
-			labelComponentsAfterRemoval(3, label, _cube);
+			labelComponentsAfterRemoval(3, label);
 		}
-		if (_cube[15] == 1) {
+		if (_cube[15] == 255) {
 		
 			_cube[15] = label;
-			labelComponentsAfterRemoval(3, label, _cube);
-			labelComponentsAfterRemoval(4, label, _cube);
-			labelComponentsAfterRemoval(8, label, _cube);
+			labelComponentsAfterRemoval(3, label);
+			labelComponentsAfterRemoval(4, label);
+			labelComponentsAfterRemoval(8, label);
 		}
-		if (_cube[20] == 1) {
+		if (_cube[20] == 255) {
 		
 			_cube[20] = label;
-			labelComponentsAfterRemoval(5, label, _cube);
+			labelComponentsAfterRemoval(5, label);
 		}
-		if (_cube[21] == 1) {
+		if (_cube[21] == 255) {
 		
 			_cube[21] = label;
-			labelComponentsAfterRemoval(5, label, _cube);
-			labelComponentsAfterRemoval(6, label, _cube);
-			labelComponentsAfterRemoval(8, label, _cube);
+			labelComponentsAfterRemoval(5, label);
+			labelComponentsAfterRemoval(6, label);
+			labelComponentsAfterRemoval(8, label);
 		}
-		if (_cube[23] == 1)
+		if (_cube[23] == 255)
 			_cube[23] = label;
-		if (_cube[24] == 1) {
+		if (_cube[24] == 255) {
 		
 			_cube[24] = label;
-			labelComponentsAfterRemoval(8, label, _cube);
+			labelComponentsAfterRemoval(8, label);
 		}
 	}
 
 	if (octant==8) {
 	
-		if (_cube[13] == 1) {
+		if (_cube[13] == 255) {
 		
 			_cube[13] = label;
-			labelComponentsAfterRemoval(2, label, _cube);
-			labelComponentsAfterRemoval(4, label, _cube);
-			labelComponentsAfterRemoval(6, label, _cube);
+			labelComponentsAfterRemoval(2, label);
+			labelComponentsAfterRemoval(4, label);
+			labelComponentsAfterRemoval(6, label);
 		}
-		if (_cube[15] == 1) {
+		if (_cube[15] == 255) {
 		
 			_cube[15] = label;
-			labelComponentsAfterRemoval(3, label, _cube);
-			labelComponentsAfterRemoval(4, label, _cube);
-			labelComponentsAfterRemoval(7, label, _cube);
+			labelComponentsAfterRemoval(3, label);
+			labelComponentsAfterRemoval(4, label);
+			labelComponentsAfterRemoval(7, label);
 		}
-		if (_cube[16] == 1) {
+		if (_cube[16] == 255) {
 		
 			_cube[16] = label;
-			labelComponentsAfterRemoval(4, label, _cube);
+			labelComponentsAfterRemoval(4, label);
 		}
-		if (_cube[21] == 1) {
+		if (_cube[21] == 255) {
 		
 			_cube[21] = label;
-			labelComponentsAfterRemoval(5, label, _cube);
-			labelComponentsAfterRemoval(6, label, _cube);
-			labelComponentsAfterRemoval(7, label, _cube);
+			labelComponentsAfterRemoval(5, label);
+			labelComponentsAfterRemoval(6, label);
+			labelComponentsAfterRemoval(7, label);
 		}
-		if (_cube[22] == 1) {
+		if (_cube[22] == 255) {
 		
 			_cube[22] = label;
-			labelComponentsAfterRemoval(6, label, _cube);
+			labelComponentsAfterRemoval(6, label);
 		}
-		if (_cube[24] == 1) {
+		if (_cube[24] == 255) {
 		
 			_cube[24] = label;
-			labelComponentsAfterRemoval(7, label, _cube);
+			labelComponentsAfterRemoval(7, label);
 		}
-		if (_cube[25] == 1)
+		if (_cube[25] == 255)
 			_cube[25] = label;
 	}
 }
