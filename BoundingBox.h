@@ -118,6 +118,45 @@ public:
 		return *this;
 	}
 
+	bool operator==(const BoundingBox& other) const {
+
+		return
+			_minX == other._minX &&
+			_minY == other._minY &&
+			_minZ == other._minZ &&
+			_maxX == other._maxX &&
+			_maxY == other._maxY &&
+			_maxZ == other._maxZ;
+	}
+
+	/**
+	 * Multiply a bounding box with a vector. Each dimension will be scaled with 
+	 * the corresponding value in the vector.
+	 */
+	template <typename PointType>
+	BoundingBox operator*(const PointType& point) const {
+
+		BoundingBox result = *this;
+		return result *= point;
+	}
+
+	/**
+	 * Multiply a bounding box with a vector. Each dimension will be scaled with 
+	 * the corresponding value in the vector.
+	 */
+	template <typename PointType>
+	BoundingBox& operator*=(const PointType& point) {
+
+		_minX *= point[0];
+		_maxX *= point[0];
+		_minY *= point[1];
+		_maxY *= point[1];
+		_minZ *= point[2];
+		_maxZ *= point[2];
+
+		return *this;
+	}
+
 	bool contains(float x, float y, float z) const {
 
 		if (_maxX <= x || _minX > x || _maxY <= y || _minY > y || _maxZ <= z || _minZ > z)
