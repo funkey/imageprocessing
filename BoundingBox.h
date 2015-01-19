@@ -96,7 +96,7 @@ public:
 	 */
 	BoundingBox& operator+=(const BoundingBox& other) {
 
-		if (volume() == 0) {
+		if (!valid()) {
 
 			_minX = other._minX;
 			_minY = other._minY;
@@ -163,6 +163,11 @@ public:
 			return false;
 
 		return true;
+	}
+
+	bool valid() const {
+
+		return (width() > 0 || height() > 0 || depth() > 0);
 	}
 
 private:
