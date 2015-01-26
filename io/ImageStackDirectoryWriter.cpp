@@ -52,8 +52,6 @@ ImageStackDirectoryWriter::write(std::string basename) {
 
 	updateInputs();
 
-	boost::unique_lock<boost::shared_mutex> lock(_stack->getMutex());
-
 	boost::filesystem::path directory(_directory);
 
 	if (!boost::filesystem::exists(directory))
