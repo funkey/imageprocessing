@@ -11,7 +11,8 @@ struct ComponentTreeExtractorParameters : public pipeline::Data {
 		minSize(0),
 		maxSize(std::numeric_limits<std::size_t>::max()),
 		minIntensity(0),
-		maxIntensity(0) {}
+		maxIntensity(0),
+		sameIntensityComponents(false) {}
 
 	// extract components, start with the darkest
 	bool         darkToBright;
@@ -32,6 +33,9 @@ struct ComponentTreeExtractorParameters : public pipeline::Data {
 	 */
 	float minIntensity;
 	float maxIntensity;
+
+	// extract a flat tree that has only same-intensity regions
+	bool sameIntensityComponents;
 };
 
 #endif // IMAGEPROCESSING_COMPONENT_TREE_EXTRACTOR_PARAMETERS_H__

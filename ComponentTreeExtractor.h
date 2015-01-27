@@ -174,10 +174,32 @@ ComponentTreeExtractor<Precision>::updateOutputs() {
 		parameters.maxIntensity = _parameters->maxIntensity;
 	}
 
-	ImageLevelParser<Precision> parser(*_image, parameters);
+	if (_parameters->sameIntensityComponents) {
 
-	// let the visitor run over the components
-	parser.parse(visitor);
+		Image separatedRegions = *_image;
+		for (unsigned int y = 0; y < separatedRegions.height() - 1; y++)
+			for (unsigned int x = 0; x < separatedRegions.width() - 1; x++) {
+
+				float value = separatedRegions(x, y);
+				float right = separatedRegions(x+1, y);
+				float down  = separatedRegions(x, y+1);
+
+				if ((value != right && right != 0) || (value != down && down != 0))
+					separatedRegions(x, y) = 0;
+			}
+
+		ImageLevelParser<Precision> parser(separatedRegions, parameters);
+
+		// let the visitor run over the components
+		parser.parse(visitor);
+
+	} else {
+
+		ImageLevelParser<Precision> parser(*_image, parameters);
+
+		// let the visitor run over the components
+		parser.parse(visitor);
+	}
 
 	// set the root node in the component tree
 	_componentTree->setRoot(visitor.getRoot());
