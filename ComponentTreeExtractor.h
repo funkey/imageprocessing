@@ -29,9 +29,7 @@ private:
 				unsigned int                     maxSize) :
 			_image(image),
 			_minSize(minSize),
-			_maxSize(maxSize),
-			_prevBegin(0),
-			_prevEnd(0) {}
+			_maxSize(maxSize) {}
 
 		void setPixelList(boost::shared_ptr<PixelList> pixelList) { _pixelList = pixelList; }
 
