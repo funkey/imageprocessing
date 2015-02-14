@@ -63,7 +63,7 @@ ImageReader::readImage() {
 	else {
 
 		factor = 1.0;
-		LOG_ERROR(imagereaderlog) << _filename << " has a unsupported pixel format: " << info.getPixelType() << std::endl;
+		LOG_DEBUG(imagereaderlog) << _filename << " has pixel format " << info.getPixelType() << ", will not scale values" << std::endl;
 	}
 
 	vigra::transformImage(
