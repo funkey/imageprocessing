@@ -62,6 +62,9 @@ ImageStackPainter::setCurrentSection(unsigned int section) {
 		LOG_ALL(imagestackpainterlog) << "index for image " << i << " is " << imageIndex << std::endl;
 
 		_imagePainters[i]->setImage((*_stack)[imageIndex]);
+
+		if ((*_stack)[imageIndex]->getIdentifier() != "")
+			LOG_USER(imagestackpainterlog) << "showing image " << (*_stack)[imageIndex]->getIdentifier() << std::endl;
 	}
 
 	util::rect<double> size = _imagePainters[0]->getSize();

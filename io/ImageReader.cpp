@@ -37,6 +37,7 @@ ImageReader::readImage() {
 
 	// allocate image
 	_image = new Image(info.width(), info.height());
+	_image->setIdentifiyer(_filename);
 
 	try {
 
