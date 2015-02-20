@@ -12,7 +12,8 @@ struct ComponentTreeExtractorParameters : public pipeline::Data {
 		maxSize(std::numeric_limits<std::size_t>::max()),
 		minIntensity(0),
 		maxIntensity(0),
-		sameIntensityComponents(false) {}
+		sameIntensityComponents(false),
+		spacedEdgeImage(false) {}
 
 	// extract components, start with the darkest
 	bool         darkToBright;
@@ -36,6 +37,10 @@ struct ComponentTreeExtractorParameters : public pipeline::Data {
 
 	// extract a flat tree that has only same-intensity regions
 	bool sameIntensityComponents;
+
+	// indicate that the image to parse is a scaled edge image (see 
+	// ImageLevelParser::Parameters for details)
+	bool spacedEdgeImage;
 };
 
 #endif // IMAGEPROCESSING_COMPONENT_TREE_EXTRACTOR_PARAMETERS_H__

@@ -167,9 +167,10 @@ ComponentTreeExtractor<Precision>::updateOutputs() {
 	typename ImageLevelParser<Precision>::Parameters parameters;
 	if (_parameters.isSet()) {
 
-		parameters.darkToBright = _parameters->darkToBright;
-		parameters.minIntensity = _parameters->minIntensity;
-		parameters.maxIntensity = _parameters->maxIntensity;
+		parameters.darkToBright    = _parameters->darkToBright;
+		parameters.minIntensity    = _parameters->minIntensity;
+		parameters.maxIntensity    = _parameters->maxIntensity;
+		parameters.spacedEdgeImage = _parameters->spacedEdgeImage;
 	}
 
 	if (_parameters->sameIntensityComponents) {

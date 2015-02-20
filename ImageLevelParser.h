@@ -35,7 +35,7 @@ public:
 	 */
 	struct Parameters {
 
-		Parameters() : darkToBright(true), minIntensity(0), maxIntensity(0) {}
+		Parameters() : darkToBright(true), minIntensity(0), maxIntensity(0), spacedEdgeImage(false) {}
 
 		// start processing the dark regions
 		bool darkToBright;
@@ -50,6 +50,18 @@ public:
 		 */
 		float minIntensity;
 		float maxIntensity;
+
+		/**
+		 * Indicate that the image to process is a spaced edge image. A spaced 
+		 * edge image is scaled by a factor of 2 in each dimension, and the 
+		 * original values of pixel (x,y) are now in (2x,2y). The odd locations 
+		 * of the spaced edge image indicate edges, such that a component tree 
+		 * can be extracted even if components are touching (i.e., they don't 
+		 * need to have a boundary that separates them). Setting this flag 
+		 * ensures that the pixels in the pixel list are only from even 
+		 * locations (2x, 2y) and are stored as (x,y).
+		 */
+		bool spacedEdgeImage;
 	};
 
 	/**
@@ -410,7 +422,16 @@ ImageLevelParser<Precision>::gotoLocation(const point_type& newLocation, Visitor
 
 		// mark it as visited and add it to the pixel list
 		_visited(newLocation.x, newLocation.y) = true;
-		_pixelList->add(newLocation);
+
+		if (_parameters.spacedEdgeImage) {
+
+			if (newLocation.x % 2 == 0 && newLocation.y % 2 == 0)
+				_pixelList->add(newLocation/2);
+
+		} else {
+
+			_pixelList->add(newLocation);
+		}
 	}
 }
 
