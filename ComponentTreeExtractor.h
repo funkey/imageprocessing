@@ -24,12 +24,14 @@ private:
 	public:
 
 		ComponentVisitor(
-				boost::shared_ptr<Image>         image,
-				unsigned int                     minSize,
-				unsigned int                     maxSize) :
+				boost::shared_ptr<Image> image,
+				unsigned int             minSize,
+				unsigned int             maxSize,
+				bool                     spacedEdgeImage) :
 			_image(image),
 			_minSize(minSize),
-			_maxSize(maxSize) {}
+			_maxSize(maxSize),
+			_spacedEdgeImage(spacedEdgeImage) {}
 
 		void setPixelList(boost::shared_ptr<PixelList> pixelList) { _pixelList = pixelList; }
 
@@ -58,6 +60,8 @@ private:
 
 		unsigned int _minSize;
 		unsigned int _maxSize;
+
+		bool _spacedEdgeImage;
 
 		// extents of the previous component to detect changes
 		PixelList::const_iterator _prevBegin;
@@ -92,7 +96,7 @@ ComponentTreeExtractor<Precision>::ComponentVisitor::finalizeComponent(
 
 	size_t size = end - begin;
 
-	bool wholeImage = (size == _image->size());
+	bool wholeImage = (size == (_spacedEdgeImage ? _image->size() / 4 : _image->size()));
 	bool validSize  = (size >= _minSize && (_maxSize == 0 || size < _maxSize));
 
 	// we accept the whole image, even if it is not a valid size, to create a 
@@ -151,17 +155,21 @@ ComponentTreeExtractor<Precision>::updateOutputs() {
 	else
 		_componentTree->clear();
 
+	LOG_DEBUG(componenttreeextractorlog) << "starting extraction" << std::endl;
+
 	unsigned int minSize = 0;
 	unsigned int maxSize = 0;
+	bool spacedEdgeImage = false;
 
 	if (_parameters.isSet()) {
 
 		minSize = _parameters->minSize;
 		maxSize = _parameters->maxSize;
+		spacedEdgeImage = _parameters->spacedEdgeImage;
 	}
 
 	// create a new visitor
-	ComponentVisitor visitor(_image.getSharedPointer(), minSize, maxSize);
+	ComponentVisitor visitor(_image.getSharedPointer(), minSize, maxSize, spacedEdgeImage);
 
 	// create an image level parser
 	typename ImageLevelParser<Precision>::Parameters parameters;
@@ -202,6 +210,10 @@ ComponentTreeExtractor<Precision>::updateOutputs() {
 
 	// set the root node in the component tree
 	_componentTree->setRoot(visitor.getRoot());
+
+	LOG_DEBUG(componenttreeextractorlog)
+			<< "extracted " << _componentTree->size()
+			<< " components" << std::endl;
 }
 
 #endif // IMAGEPROCESSING_COMPNENT_TREE_EXTRACTOR_H__
