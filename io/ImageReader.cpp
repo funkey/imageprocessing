@@ -59,8 +59,6 @@ ImageReader::readImage() {
 	float factor;
 	if (strcmp(info.getPixelType(), "UINT8") == 0)
 		factor = 255.0;
-	else if (strcmp(info.getPixelType(), "INT16") == 0)
-		factor = 511.0;
 	else {
 
 		factor = 1.0;
