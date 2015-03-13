@@ -2,7 +2,7 @@
 #include <util/Logger.h>
 #include "ExtractSkeleton.h"
 
-logger::LogChannel skeletonizelog("skeletonizelog", "[Skeletonize] ");
+logger::LogChannel extractskeletonlog("extractskeletonlog", "[ExtractSkeleton] ");
 
 ExtractSkeleton::ExtractSkeleton() {
 
@@ -31,11 +31,11 @@ ExtractSkeleton::updateOutputs() {
 		_skeletonize.skeletonize(volume);
 	}
 
-	LOG_USER(skeletonizelog) << "preparing output image stack" << std::endl;
+	LOG_USER(extractskeletonlog) << "preparing output image stack" << std::endl;
 
 	prepareSkeletonImage();
 
-	LOG_USER(skeletonizelog) << "copy skeletons" << std::endl;
+	LOG_USER(extractskeletonlog) << "copy skeletons" << std::endl;
 
 	// read back output stack
 	for (unsigned int i = 0; i < depth; i++)
@@ -43,7 +43,7 @@ ExtractSkeleton::updateOutputs() {
 				volume.bind<2>(i),
 				*(*_skeleton)[i]);
 
-	LOG_USER(skeletonizelog) << "done" << std::endl;
+	LOG_USER(extractskeletonlog) << "done" << std::endl;
 }
 
 void
