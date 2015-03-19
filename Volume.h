@@ -1,7 +1,7 @@
 #ifndef IMAGEPROCESSING_VOLUME_H__
 #define IMAGEPROCESSING_VOLUME_H__
 
-#include "BoundingBox.h"
+#include <util/BoundingBox.h>
 
 /**
  * Base for classes representing a 3D volume.
