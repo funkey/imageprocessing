@@ -159,9 +159,6 @@ Skeletonize::downsampleVolume(const ExplicitVolume<unsigned char>& volume) {
 		for (int x = 0; x < targetSize[0]; x++)
 			_volume(x, y, z) = volume(x*factors[0], y*factors[1], z*factors[2]);
 
-		vigra::exportVolume(_volume.data(), vigra::VolumeExportInfo("downsampled/downsampled", ".tif"));
-		//UTIL_THROW_EXCEPTION(Exception, "breakpoint");
-
 		int numRegions;
 		try {
 
