@@ -297,9 +297,9 @@ Skeletonize::initializeEdgeMap() {
 	//
 	// The TEASAR paper suggests to add the Euclidean distances. However, for 
 	// the penalty to be meaningful in anistotropic volumes, it should be 
-	// multiplied with the Euclidean distance between the nodes (otherwise, I is 
-	// more expensive to move in the high-resolution dimensions). Therefore, the 
-	// final value is
+	// multiplied with the Euclidean distance between the nodes (otherwise, it 
+	// is more expensive to move in the high-resolution dimensions). Therefore, 
+	// the final value is
 	//
 	//   penalty*euclidean + euclidean = euclidean*(penalty + 1)
 
@@ -441,12 +441,12 @@ Skeletonize::drawExplanationSphere(const Position& center) {
 double
 Skeletonize::boundaryPenalty(double boundaryDistance) {
 
-	// penalty = w*(1.0 - bd/max_bd)^16
+	// penalty = w*(1.0 - bd/max_bd)
 	//
+	//   w     : boundary weight
 	//   bd    : boundary distance
 	//   max_bd: max boundary distance
-	//   16    : magic number, taken from TEASAR paper
-	return _boundaryWeight*pow(1.0 - sqrt(boundaryDistance/_maxBoundaryDistance2), 16);
+	return _boundaryWeight*(1.0 - sqrt(boundaryDistance/_maxBoundaryDistance2));
 }
 
 Skeleton
