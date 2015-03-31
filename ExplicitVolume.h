@@ -72,6 +72,31 @@ public:
 	const ValueType& operator()(unsigned int x, unsigned int y, unsigned int z) const { return _data(x, y, z); }
 
 	/**
+	 * 2D z-slice access.
+	 */
+	Image slice(int z) {
+
+		vigra::MultiArrayView<2, ValueType> slice = _data.template bind<2>(z);
+
+		Image image;
+		image = slice;
+		image.setResolution(
+				getResolutionX(),
+				getResolutionY(),
+				getResolutionZ());
+		image.setBoundingBox(
+				BoundingBox(
+						getBoundingBox().getMinX(),
+						getBoundingBox().getMinY(),
+						getBoundingBox().getMinZ() + z*getResolutionZ(),
+						getBoundingBox().getMaxX(),
+						getBoundingBox().getMaxY(),
+						getBoundingBox().getMinZ() + (z+1)*getResolutionZ()));
+
+		return image;
+	}
+
+	/**
 	 * Get access to the vigra multi-array that contains the data of this 
 	 * volume.
 	 */
