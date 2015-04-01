@@ -1,7 +1,7 @@
 #ifndef IMAGEPROCESSING_VOLUME_H__
 #define IMAGEPROCESSING_VOLUME_H__
 
-#include <util/BoundingBox.h>
+#include <util/box.hpp>
 
 /**
  * Base for classes representing a 3D volume.
@@ -17,12 +17,12 @@ public:
 	 * Explicitly set the bounding box of this volume. This marks the bounding 
 	 * box as non-dirty.
 	 */
-	void setBoundingBox(const BoundingBox& box) { _boundingBox = box; _boundingBoxDirty = false; }
+	void setBoundingBox(const util::box<float>& box) { _boundingBox = box; _boundingBoxDirty = false; }
 
 	/**
 	 * Get the bounding box of this volume.
 	 */
-	BoundingBox& getBoundingBox() {
+	util::box<float>& getBoundingBox() {
 
 		if (_boundingBoxDirty) {
 
@@ -36,7 +36,7 @@ public:
 	/**
 	 * Get the bounding box of this volume.
 	 */
-	const BoundingBox& getBoundingBox() const {
+	const util::box<float>& getBoundingBox() const {
 
 		if (_boundingBoxDirty) {
 
@@ -50,7 +50,7 @@ public:
 	/**
 	 * Reset this volumes bounding box to an empty bounding box.
 	 */
-	void resetBoundingBox() { _boundingBox = BoundingBox(); }
+	void resetBoundingBox() { _boundingBox = util::box<float>(); }
 
 	/**
 	 * Indicate that the bounding box changed and needs to be recomputed the 
@@ -64,7 +64,7 @@ protected:
 	 * To be overwritten by subclasses to compute the bounding box after it was 
 	 * set dirty.
 	 */
-	virtual BoundingBox computeBoundingBox() const { return BoundingBox(); }
+	virtual util::box<float> computeBoundingBox() const { return util::box<float>(); }
 
 private:
 
@@ -72,7 +72,7 @@ private:
 	 * Since we want the bounding box to be computed as needed, even in a const 
 	 * setting, we make it mutable.
 	 */
-	mutable BoundingBox _boundingBox;
+	mutable util::box<float> _boundingBox;
 
 	/**
 	 * Same for the dirty flag.

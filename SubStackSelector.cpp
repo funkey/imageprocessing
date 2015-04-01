@@ -70,10 +70,10 @@ SubStackSelector::updateOutputs() {
 	// set the bounds of the new stack
 	_subStack->setBoundingBox(_stack->getBoundingBox());
 
-	float minZ    = _stack->getBoundingBox().getMinZ();
+	float minZ    = _stack->getBoundingBox().minZ;
 	float subMinZ = minZ + _firstImage*resZ;
 	float subMaxZ = minZ + lastImage*resZ;
 
-	_subStack->getBoundingBox().setMinZ(subMinZ);
-	_subStack->getBoundingBox().setMaxZ(subMaxZ);
+	_subStack->getBoundingBox().minZ = subMinZ;
+	_subStack->getBoundingBox().maxZ = subMaxZ;
 }

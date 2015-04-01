@@ -1,7 +1,7 @@
 #ifndef IMAGEPROCESSING_DISCRETIZATION_H__
 #define IMAGEPROCESSING_DISCRETIZATION_H__
 
-#include "Volume.h"
+#include <imageprocessing/Volume.h>
 
 /**
  * A discretization of a volume. Points within the bounding box of the volume 
@@ -48,9 +48,9 @@ public:
 			unsigned int& dx, unsigned int& dy, unsigned int& dz) const {
 
 		// remove offset
-		x -= getBoundingBox().getMinX();
-		y -= getBoundingBox().getMinY();
-		z -= getBoundingBox().getMinZ();
+		x -= getBoundingBox().minX;
+		y -= getBoundingBox().minY;
+		z -= getBoundingBox().minZ;
 
 		// discretize
 		dx = x/getResolutionX();
@@ -65,9 +65,9 @@ public:
 			unsigned int dx, unsigned int dy, unsigned int dz,
 			float& x, float& y, float& z)  const{
 
-		x = dx*getResolutionX() + getBoundingBox().getMinX();
-		y = dy*getResolutionY() + getBoundingBox().getMinY();
-		z = dz*getResolutionZ() + getBoundingBox().getMinZ();
+		x = dx*getResolutionX() + getBoundingBox().minX;
+		y = dy*getResolutionY() + getBoundingBox().minY;
+		z = dz*getResolutionZ() + getBoundingBox().minZ;
 	}
 
 private:

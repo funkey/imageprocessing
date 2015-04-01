@@ -108,7 +108,7 @@ public:
 
 protected:
 
-	BoundingBox computeBoundingBox() const override;
+	util::box<float> computeBoundingBox() const override;
 
 private:
 
