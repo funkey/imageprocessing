@@ -85,13 +85,13 @@ public:
 				getResolutionY(),
 				getResolutionZ());
 		image.setBoundingBox(
-				util::box<float>(
-						getBoundingBox().minX,
-						getBoundingBox().minY,
-						getBoundingBox().minZ + z*getResolutionZ(),
-						getBoundingBox().maxX,
-						getBoundingBox().maxY,
-						getBoundingBox().minZ + (z+1)*getResolutionZ()));
+				util::box<float,3>(
+						getBoundingBox().min().x(),
+						getBoundingBox().min().y(),
+						getBoundingBox().min().z() + z*getResolutionZ(),
+						getBoundingBox().max().x(),
+						getBoundingBox().max().y(),
+						getBoundingBox().min().z() + (z+1)*getResolutionZ()));
 
 		return image;
 	}

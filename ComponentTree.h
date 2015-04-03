@@ -4,6 +4,7 @@
 #include <imageprocessing/ConnectedComponent.h>
 #include <util/foreach.h>
 #include <util/Logger.h>
+#include <util/box.hpp>
 #include <pipeline/all.h>
 
 static logger::LogChannel componenttreelog("componenttreelog", "[ComponentTree] ");
@@ -185,7 +186,7 @@ public:
 	 *
 	 * @return A rectangle encapsulating all components in the tree.
 	 */
-	const util::rect<double>& getBoundingBox() const;
+	const util::box<double,2>& getBoundingBox() const;
 
 	/**
 	 * Creates a copy of the component tree, but not a copy of the involved
@@ -203,11 +204,11 @@ private:
 
 	void updateBoundingBox();
 
-	util::rect<double> updateBoundingBox(boost::shared_ptr<Node> node);
+	util::box<double,2> updateBoundingBox(boost::shared_ptr<Node> node);
 
 	boost::shared_ptr<Node> _root;
 
-	util::rect<double> _boundingBox;
+	util::box<double,2> _boundingBox;
 };
 
 #endif // IMAGEPROCESSING_COMPONENT_TREE_H__

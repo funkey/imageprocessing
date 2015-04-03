@@ -48,9 +48,9 @@ public:
 			unsigned int& dx, unsigned int& dy, unsigned int& dz) const {
 
 		// remove offset
-		x -= getBoundingBox().minX;
-		y -= getBoundingBox().minY;
-		z -= getBoundingBox().minZ;
+		x -= getBoundingBox().min().x();
+		y -= getBoundingBox().min().y();
+		z -= getBoundingBox().min().z();
 
 		// discretize
 		dx = x/getResolutionX();
@@ -65,9 +65,9 @@ public:
 			unsigned int dx, unsigned int dy, unsigned int dz,
 			float& x, float& y, float& z)  const{
 
-		x = dx*getResolutionX() + getBoundingBox().minX;
-		y = dy*getResolutionY() + getBoundingBox().minY;
-		z = dz*getResolutionZ() + getBoundingBox().minZ;
+		x = dx*getResolutionX() + getBoundingBox().min().x();
+		y = dy*getResolutionY() + getBoundingBox().min().y();
+		z = dz*getResolutionZ() + getBoundingBox().min().z();
 	}
 
 private:

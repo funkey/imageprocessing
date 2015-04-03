@@ -109,7 +109,7 @@ ImageStackDirectoryReader::StackAssembler::updateOutputs() {
 
 	_stack->setResolution(_resX, _resY, _resZ);
 	_stack->setBoundingBox(
-			util::box<float>(
+			util::box<float,3>(
 					0, 0, 0,
 					_stack->width()*_resX, _stack->height()*_resY, _images.size()*_resZ));
 }

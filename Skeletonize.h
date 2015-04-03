@@ -102,9 +102,9 @@ private:
 	Skeleton::Position gridToVolume(Position pos) {
 
 		return Skeleton::Position(
-				_volume.getBoundingBox().minX + (float)pos[0]*_volume.getResolutionX(),
-				_volume.getBoundingBox().minY + (float)pos[1]*_volume.getResolutionY(),
-				_volume.getBoundingBox().minZ + (float)pos[2]*_volume.getResolutionZ());
+				_volume.getBoundingBox().min().x() + (float)pos[0]*_volume.getResolutionX(),
+				_volume.getBoundingBox().min().y() + (float)pos[1]*_volume.getResolutionY(),
+				_volume.getBoundingBox().min().z() + (float)pos[2]*_volume.getResolutionZ());
 	}
 
 	/**

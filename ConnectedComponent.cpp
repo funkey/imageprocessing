@@ -24,19 +24,19 @@ ConnectedComponent::ConnectedComponent(
 	// if there is at least one pixel
 	if (begin != end) {
 
-		_boundingBox.minX = begin->x();
-		_boundingBox.maxX = begin->x() + 1;
-		_boundingBox.minY = begin->y();
-		_boundingBox.maxY = begin->y() + 1;
+		_boundingBox.min().x() = begin->x();
+		_boundingBox.max().x() = begin->x() + 1;
+		_boundingBox.min().y() = begin->y();
+		_boundingBox.max().y() = begin->y() + 1;
 	}
 
 	typedef util::point<unsigned int,2> point2;
 	foreach (const point2& pixel, getPixels()) {
 
-		_boundingBox.minX = std::min(_boundingBox.minX, (int)pixel.x());
-		_boundingBox.maxX = std::max(_boundingBox.maxX, (int)pixel.x() + 1);
-		_boundingBox.minY = std::min(_boundingBox.minY, (int)pixel.y());
-		_boundingBox.maxY = std::max(_boundingBox.maxY, (int)pixel.y() + 1);
+		_boundingBox.min().x() = std::min(_boundingBox.min().x(), (int)pixel.x());
+		_boundingBox.max().x() = std::max(_boundingBox.max().x(), (int)pixel.x() + 1);
+		_boundingBox.min().y() = std::min(_boundingBox.min().y(), (int)pixel.y());
+		_boundingBox.max().y() = std::max(_boundingBox.max().y(), (int)pixel.y() + 1);
 
 		_center += pixel;
 	}
@@ -47,7 +47,7 @@ ConnectedComponent::ConnectedComponent(
 
 	typedef util::point<int,2> pointi2;
 	foreach (const pointi2& pixel, getPixels())
-		_bitmap(pixel.x() - _boundingBox.minX, pixel.y() - _boundingBox.minY) = true;
+		_bitmap(pixel.x() - _boundingBox.min().x(), pixel.y() - _boundingBox.min().y()) = true;
 }
 
 double
@@ -80,7 +80,7 @@ ConnectedComponent::getSize() const {
 	return _pixelRange.second - _pixelRange.first;
 }
 
-const util::rect<int>&
+const util::box<int,2>&
 ConnectedComponent::getBoundingBox() const {
 
 	return _boundingBox;
@@ -123,8 +123,8 @@ ConnectedComponent::intersect(const ConnectedComponent& other) {
 	foreach (const point2& pixel, other.getPixels())
 		if (_boundingBox.contains(pixel)) {
 
-			unsigned int x = pixel.x() - _boundingBox.minX;
-			unsigned int y = pixel.y() - _boundingBox.minY;
+			unsigned int x = pixel.x() - _boundingBox.min().x();
+			unsigned int y = pixel.y() - _boundingBox.min().y();
 
 			if (x >= size[0] || y >= size[1])
 				continue;
@@ -153,8 +153,8 @@ bool ConnectedComponent::intersects(const ConnectedComponent& other)
 		{
 			if (_boundingBox.contains(pixel)) {
 
-				unsigned int x = pixel.x() - _boundingBox.minX;
-				unsigned int y = pixel.y() - _boundingBox.minY;
+				unsigned int x = pixel.x() - _boundingBox.min().x();
+				unsigned int y = pixel.y() - _boundingBox.min().y();
 
 				if (x >= size[0] || y >= size[1])
 					continue;
@@ -174,8 +174,8 @@ bool ConnectedComponent::intersects(const ConnectedComponent& other)
 bool
 ConnectedComponent::operator==(const ConnectedComponent& other) const
 {
-	util::rect<int> thisBound = getBoundingBox();
-	util::rect<int> otherBound = other.getBoundingBox();
+	util::box<int,2> thisBound = getBoundingBox();
+	util::box<int,2> otherBound = other.getBoundingBox();
 
 	if (thisBound == otherBound)
 	{
@@ -187,7 +187,7 @@ ConnectedComponent::operator==(const ConnectedComponent& other) const
 		typedef util::point<unsigned int,2> point2;
 		foreach (const point2& pixel, getPixels())
 		{
-			if (!otherBitmap(pixel.x() - thisBound.minX, pixel.y() - thisBound.minY))
+			if (!otherBitmap(pixel.x() - thisBound.min().x(), pixel.y() - thisBound.min().y()))
 			{
 				return false;
 			}
@@ -196,7 +196,7 @@ ConnectedComponent::operator==(const ConnectedComponent& other) const
 		//Check that our bitmap contains all of the other's pixels.
 		foreach (const point2& pixel, other.getPixels())
 		{
-			if (!thisBitmap(pixel.x() - otherBound.minX, pixel.y() - otherBound.minY))
+			if (!thisBitmap(pixel.x() - otherBound.min().x(), pixel.y() - otherBound.min().y()))
 			{
 				return false;
 			}

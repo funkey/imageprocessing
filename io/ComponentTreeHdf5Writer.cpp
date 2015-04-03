@@ -71,10 +71,10 @@ ComponentTreeHdf5Writer::WriteVisitor::visitNode(boost::shared_ptr<ComponentTree
 	_pixelListIds[_numComponents] = pixelListId;
 	_begins[_numComponents]       = begin;
 	_ends[_numComponents]         = end;
-	_minXs[_numComponents]        = component->getBoundingBox().minX;
-	_maxXs[_numComponents]        = component->getBoundingBox().maxX;
-	_minYs[_numComponents]        = component->getBoundingBox().minY;
-	_maxYs[_numComponents]        = component->getBoundingBox().maxY;
+	_minXs[_numComponents]        = component->getBoundingBox().min().x();
+	_maxXs[_numComponents]        = component->getBoundingBox().max().x();
+	_minYs[_numComponents]        = component->getBoundingBox().min().y();
+	_maxYs[_numComponents]        = component->getBoundingBox().max().y();
 	_values[_numComponents]       = component->getValue();
 
 	_numComponents++;

@@ -6,7 +6,7 @@
 #include <imageprocessing/Image.h>
 #include <imageprocessing/PixelList.h>
 #include <util/point.hpp>
-#include <util/rect.hpp>
+#include <util/box.hpp>
 #include <util/Logger.h>
 #include <util/Hashable.h>
 #include <pipeline/all.h>
@@ -58,7 +58,7 @@ public:
 	/**
 	 * Get the bounding box of this component.
 	 */
-	const util::rect<int>& getBoundingBox() const;
+	const util::box<int,2>& getBoundingBox() const;
 
 	/**
 	 * Get a bitmap of the size of the bounding box with values 'true' for every
@@ -109,10 +109,10 @@ private:
 	double                                  _value;
 
 	// the min and max x and y values
-	util::rect<int>                         _boundingBox;
+	util::box<int,2>                        _boundingBox;
 
 	// the center of mass of this component
-	util::point<double,2>                     _center;
+	util::point<double,2>                   _center;
 
 	// the image, this component was extracted from
 	boost::shared_ptr<Image>                _source;

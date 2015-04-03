@@ -96,17 +96,17 @@ Skeleton::closeNode() {
 	_currentPath.pop();
 }
 
-util::box<float>
+util::box<float,3>
 Skeleton::computeBoundingBox() const {
 
-	util::box<float> bb;
+	util::box<float,3> bb;
 
 	for (Graph::EdgeIt edge(graph()); edge!= lemon::INVALID; ++edge) {
 
 		const Position& u = positions()[graph().u(edge)];
 		const Position& v = positions()[graph().v(edge)];
 
-		bb += util::box<float>(
+		bb += util::box<float,3>(
 				std::min(u[0], v[0]), std::min(u[1], v[1]), std::min(u[2], v[2]),
 				std::max(u[0], v[0]), std::max(u[1], v[1]), std::max(u[2], v[2]));
 	}

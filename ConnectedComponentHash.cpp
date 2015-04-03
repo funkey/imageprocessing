@@ -17,14 +17,14 @@ hash_value(const ConnectedComponent& component) {
 	}
 
 	const ConnectedComponent::bitmap_type& bitmap      = component.getBitmap();
-	const util::rect<unsigned int>&        boundingBox = component.getBoundingBox();
+	const util::box<int,2>&                boundingBox = component.getBoundingBox();
 
 	for (int x = 0; x < bitmap.width(); ++x) {
 		for (int y = 0; y < bitmap.height(); ++y) {
 			if (bitmap(x, y)) {
 
-				boost::hash_combine(hash, boost::hash_value(x + boundingBox.minX));
-				boost::hash_combine(hash, boost::hash_value(y + boundingBox.minY));
+				boost::hash_combine(hash, boost::hash_value(x + boundingBox.min().x()));
+				boost::hash_combine(hash, boost::hash_value(y + boundingBox.min().y()));
 			}
 		}
 	}
