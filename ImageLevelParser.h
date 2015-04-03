@@ -136,7 +136,7 @@ public:
 
 private:
 
-	typedef util::point<unsigned int> point_type;
+	typedef util::point<unsigned int,2> point_type;
 
 	/**
 	 * Set the current location and level.
@@ -397,7 +397,7 @@ template <typename VisitorType>
 void
 ImageLevelParser<Precision>::gotoLocation(const point_type& newLocation, VisitorType& visitor) {
 
-	Precision newLevel = _image(newLocation.x, newLocation.y);
+	Precision newLevel = _image(newLocation.x(), newLocation.y());
 
 	// if we descend
 	if (_currentLevel > newLevel) {
@@ -429,13 +429,13 @@ ImageLevelParser<Precision>::gotoLocation(const point_type& newLocation, Visitor
 	_currentLevel    = newLevel;
 
 	// the first time we are here?
-	if (!_visited(newLocation.x, newLocation.y)) {
+	if (!_visited(newLocation.x(), newLocation.y())) {
 
 		// mark it as visited and add it to the pixel list
-		_visited(newLocation.x, newLocation.y) = true;
+		_visited(newLocation.x(), newLocation.y()) = true;
 
 		if (_parameters.spacedEdgeImage)
-			if (newLocation.x % 2 == 0 && newLocation.y % 2 == 0)
+			if (newLocation.x() % 2 == 0 && newLocation.y() % 2 == 0)
 				_condensedPixelList->add(newLocation/2);
 
 		_pixelList->add(newLocation);
@@ -535,7 +535,7 @@ ImageLevelParser<Precision>::fillLevel(VisitorType& visitor) {
 					//<< " on the boundary" << std::endl;
 
 			// continue searching, if the boundary location was visited already
-			if (_visited(newLocation.x, newLocation.y)) {
+			if (_visited(newLocation.x(), newLocation.y())) {
 
 				//LOG_ALL(imagelevelparserlog) << "this location was visited already" << std::endl;
 				continue;
@@ -568,7 +568,7 @@ ImageLevelParser<Precision>::gotoHigherLevel(VisitorType& visitor) {
 	// find the lowest boundary location higher then the current level that has 
 	// not been visited yet
 	while (popHigherBoundaryLocation(_currentLevel, newLocation, newLevel))
-		if (!_visited(newLocation.x, newLocation.y)) {
+		if (!_visited(newLocation.x(), newLocation.y())) {
 
 			found = true;
 			break;
@@ -621,7 +621,7 @@ ImageLevelParser<Precision>::gotoLowerLevel(Precision referenceLevel, VisitorTyp
 	// find the lowest boundary location higher then the reference level that 
 	// has not been visited yet
 	while (popLowestBoundaryLocation(referenceLevel, newLocation, newLevel))
-		if (!_visited(newLocation.x, newLocation.y)) {
+		if (!_visited(newLocation.x(), newLocation.y())) {
 
 			//LOG_ALL(imagelevelparserlog)
 					//<< "found boundary location " << newLocation
@@ -765,7 +765,7 @@ ImageLevelParser<Precision>::findNeighbor(
 
 		//LOG_ALL(imagelevelparserlog) << "trying to go left" << std::endl;
 
-		if (_currentLocation.x == 0) {
+		if (_currentLocation.x() == 0) {
 
 			//LOG_ALL(imagelevelparserlog) << "\tout of bounds" << std::endl;
 			return false;
@@ -777,7 +777,7 @@ ImageLevelParser<Precision>::findNeighbor(
 
 		//LOG_ALL(imagelevelparserlog) << "trying to go up" << std::endl;
 
-		if (_currentLocation.y == 0) {
+		if (_currentLocation.y() == 0) {
 
 			//LOG_ALL(imagelevelparserlog) << "\tout of bounds" << std::endl;
 			return false;
@@ -798,15 +798,15 @@ ImageLevelParser<Precision>::findNeighbor(
 	}
 
 	// out of bounds?
-	if (neighborLocation.x >= _image.width() ||
-		neighborLocation.y >= _image.height()) {
+	if (neighborLocation.x() >= _image.width() ||
+		neighborLocation.y() >= _image.height()) {
 
 		//LOG_ALL(imagelevelparserlog) << "\tlocation " << neighborLocation << " is out of bounds" << std::endl;
 		return false;
 	}
 
 	// already visited?
-	if (_visited(neighborLocation.x, neighborLocation.y)) {
+	if (_visited(neighborLocation.x(), neighborLocation.y())) {
 
 		//LOG_ALL(imagelevelparserlog) << "\talready visited" << std::endl;
 		return false;
@@ -817,7 +817,7 @@ ImageLevelParser<Precision>::findNeighbor(
 			//<< neighborLocation << std::endl;
 
 	// we're good
-	neighborLevel = _image(neighborLocation.x, neighborLocation.y);
+	neighborLevel = _image(neighborLocation.x(), neighborLocation.y());
 
 	return true;
 }

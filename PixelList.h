@@ -9,7 +9,7 @@
  */
 class PixelList {
 
-	typedef std::vector<util::point<unsigned int> > pixel_list_type;
+	typedef std::vector<util::point<unsigned int,2> > pixel_list_type;
 
 public:
 
@@ -26,7 +26,7 @@ public:
 	/**
 	 * Add a pixel to the pixel list. Existing iterators are not invalidated.
 	 */
-	void add(const util::point<unsigned int>& pixel) {
+	void add(const util::point<unsigned int,2>& pixel) {
 
 		// don't add more pixels than you said you would
 		assert(_next != _pixelList.end());

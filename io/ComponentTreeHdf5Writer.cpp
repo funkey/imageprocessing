@@ -99,11 +99,11 @@ ComponentTreeHdf5Writer::WriteVisitor::save(H5::Group& group) {
 
 	// write the shared pixel lists
 
-	typedef util::point<unsigned int> pixel_type;
+	typedef util::point<unsigned int,2> pixel_type;
 
 	H5::CompType pixelType(sizeof(pixel_type));
-	pixelType.insertMember("x", HOFFSET(pixel_type, x), H5::PredType::NATIVE_UINT);
-	pixelType.insertMember("y", HOFFSET(pixel_type, y), H5::PredType::NATIVE_UINT);
+	pixelType.insertMember("x",                    0, H5::PredType::NATIVE_UINT);
+	pixelType.insertMember("y", sizeof(unsigned int), H5::PredType::NATIVE_UINT);
 
 	typedef std::pair<const boost::shared_ptr<ConnectedComponent::pixel_list_type>, unsigned int> list_id_pair_t;
 	foreach (list_id_pair_t& i, _savedPixelLists) {
@@ -114,7 +114,7 @@ ComponentTreeHdf5Writer::WriteVisitor::save(H5::Group& group) {
 		dims.clear();
 		dims.push_back(list->size());
 
-		std::vector<util::point<unsigned int> > listVector(list->size());
+		std::vector<util::point<unsigned int,2> > listVector(list->size());
 		std::copy(list->begin(), list->end(), listVector.begin());
 
 		hdf5::write(group, "pixel_list_" + boost::lexical_cast<std::string>(id), listVector, dims, pixelType);

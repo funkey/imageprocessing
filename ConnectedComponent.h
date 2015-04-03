@@ -53,7 +53,7 @@ public:
 	/**
 	 * Get the mean pixel location of this component.
 	 */
-	const util::point<double>& getCenter() const;
+	const util::point<double,2>& getCenter() const;
 
 	/**
 	 * Get the bounding box of this component.
@@ -79,7 +79,7 @@ public:
 	 * @param pt the point representing the translation vector.
 	 * @return The translation of this ConnectedComponent by pt.
 	 */
-	ConnectedComponent translate(const util::point<int>& pt);
+	ConnectedComponent translate(const util::point<int,2>& pt);
 	
 	/**
 	 * Intersect this connected component with another one.
@@ -112,7 +112,7 @@ private:
 	util::rect<int>                         _boundingBox;
 
 	// the center of mass of this component
-	util::point<double>                     _center;
+	util::point<double,2>                     _center;
 
 	// the image, this component was extracted from
 	boost::shared_ptr<Image>                _source;

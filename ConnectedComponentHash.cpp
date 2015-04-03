@@ -9,10 +9,11 @@ hash_value(const ConnectedComponent& component) {
 
 	ConnectedComponentHash hash = 0;
 
-	foreach (const util::point<unsigned int>& pixel, component.getPixels()) {
+	typedef util::point<unsigned int,2> point2;
+	foreach (const point2& pixel, component.getPixels()) {
 
-		boost::hash_combine(hash, boost::hash_value(pixel.x));
-		boost::hash_combine(hash, boost::hash_value(pixel.y));
+		boost::hash_combine(hash, boost::hash_value(pixel.x()));
+		boost::hash_combine(hash, boost::hash_value(pixel.y()));
 	}
 
 	const ConnectedComponent::bitmap_type& bitmap      = component.getBitmap();
