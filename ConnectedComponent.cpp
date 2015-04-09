@@ -41,11 +41,6 @@ ConnectedComponent::ConnectedComponent(
 	}
 
 	_center /= getSize();
-
-	_bitmap.reshape(bitmap_type::size_type(_boundingBox.width(), _boundingBox.height()), false);
-
-	foreach (const util::point<int>& pixel, getPixels())
-		_bitmap(pixel.x - _boundingBox.minX, pixel.y - _boundingBox.minY) = true;
 }
 
 double
@@ -86,6 +81,14 @@ ConnectedComponent::getBoundingBox() const {
 
 const ConnectedComponent::bitmap_type&
 ConnectedComponent::getBitmap() const {
+
+	if (_bitmap.size() == 0) {
+
+		_bitmap.reshape(bitmap_type::size_type(_boundingBox.width(), _boundingBox.height()), false);
+
+		foreach (const util::point<int>& pixel, getPixels())
+			_bitmap(pixel.x - _boundingBox.minX, pixel.y - _boundingBox.minY) = true;
+	}
 
 	return _bitmap;
 }

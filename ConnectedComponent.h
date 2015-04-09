@@ -123,7 +123,7 @@ private:
 
 	// a binary map of the size of the bounding box to indicate which pixels
 	// belong to this component
-	bitmap_type _bitmap;
+	mutable bitmap_type _bitmap;
 };
 
 #endif // IMAGEPROCESSING_CONNECTED_COMPONENT_H__
