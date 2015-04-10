@@ -3,84 +3,80 @@
 
 Skeleton::Skeleton() {
 
-	createGraph();
+	create();
 }
 
 Skeleton::Skeleton(Skeleton&& other) :
-	_graph(other._graph),
-	_positions(other._positions),
+	GraphVolume(std::forward<GraphVolume>(other)),
 	_segments(other._segments) {
 
-	other._graph     = 0;
-	other._positions = 0;
-	other._segments  = 0;
+	other._segments = 0;
 }
 
-Skeleton::Skeleton(const Skeleton& other) {
+Skeleton::Skeleton(const Skeleton& other) :
+	GraphVolume(other) {
 
-	createGraph();
-	copyGraph(other);
+	create();
+	copy(other);
 }
 
 Skeleton&
 Skeleton::operator=(const Skeleton& other) {
 
-	deleteGraph();
-	createGraph();
-	copyGraph(other);
+	del();
+	create();
+	copy(other);
 
 	return *this;
 }
 
 Skeleton::~Skeleton() {
 
-	deleteGraph();
+	del();
 }
 
 void
-Skeleton::createGraph() {
+Skeleton::create() {
 
-	_graph     = new Graph();
-	_positions = new Positions(*_graph);
-	_segments  = new Segments(*_graph);
+	GraphVolume::create();
+	_segments = new Segments(graph());
 }
 
 void
-Skeleton::copyGraph(const Skeleton& other) {
+Skeleton::copy(const Skeleton& other) {
 
-	lemon::GraphCopy<Graph, Graph> copy(*other._graph, *_graph);
+	GraphVolume::copy(other);
 
-	copy.nodeMap(*_positions, *other._positions);
-	copy.edgeMap(*_segments, *other._segments);
-	copy.run();
+	for (EdgeIt e(graph()); e != lemon::INVALID; ++e)
+		(*_segments)[e] = (*other._segments)[e];
 }
 
 void
-Skeleton::deleteGraph() {
+Skeleton::del() {
+
+	GraphVolume::del();
 
 	if (_segments)
 		delete _segments;
-	if (_positions)
-		delete _positions;
-	if (_graph)
-		delete _graph;
+
+	_segments = 0;
 }
 
 void
 Skeleton::openNode(Position pos) {
 
-	Node node = _graph->addNode();
+	Node node = graph().addNode();
 
 	if (_currentSegment.size() > 0) {
 
 		Node prev = _currentPath.top();
-		Edge edge = _graph->addEdge(prev, node);
+		Edge edge = graph().addEdge(prev, node);
 
 		(*_segments)[edge] = _currentSegment;
 		_currentSegment.clear();
 	}
 
-	(*_positions)[node] = pos;
+	positions()[node] = pos;
 	_currentPath.push(node);
 }
 

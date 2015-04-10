@@ -4,17 +4,12 @@
 #include <stack>
 #include <vector>
 #include <lemon/list_graph.h>
-#include "ExplicitVolume.h"
-
-/**
- * Exception for strange skeletons.
- */
-class InvalidSkeleton : public Exception {};
+#include "GraphVolume.h"
 
 /**
  * Represents a skeleton as a graph of terminal nodes and branch points.
  */
-class Skeleton : public Volume {
+class Skeleton : public GraphVolume {
 
 public:
 
@@ -44,16 +39,6 @@ public:
 	Skeleton();
 
 	/**
-	 * Create a skeleton description from an already skeletonized volume.
-	 */
-	Skeleton(const ExplicitVolume<unsigned char>& skeleton);
-
-	/**
-	 * Create a skeleton description from an already skeletonized volume.
-	 */
-	Skeleton(ExplicitVolume<unsigned char>&& skeleton);
-
-	/**
 	 * Move constructor.
 	 */
 	Skeleton(Skeleton&& other);
@@ -69,19 +54,6 @@ public:
 	Skeleton& operator=(const Skeleton& other);
 
 	~Skeleton();
-
-	/**
-	 * Get the skeleton graph.
-	 */
-	Graph& graph() { return *_graph; }
-	const Graph& graph() const { return *_graph; }
-
-	/**
-	 * Get the node property map that stores the positions of the skeleton nodes 
-	 * in the volume.
-	 */
-	Positions& positions() { return *_positions; }
-	const Positions& positions() const { return *_positions; }
 
 	/**
 	 * Get the edge property map that stores a list of positions for each 
@@ -112,14 +84,11 @@ protected:
 
 private:
 
-	void createGraph();
-	void copyGraph(const Skeleton& other);
-	void deleteGraph();
+	void create();
+	void copy(const Skeleton& other);
+	void del();
 
-	Graph* _graph;
-
-	Positions* _positions;
-	Segments*  _segments;
+	Segments* _segments;
 
 	std::stack<Node>      _currentPath;
 	std::vector<Position> _currentSegment;
