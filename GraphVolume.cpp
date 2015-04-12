@@ -13,7 +13,8 @@ GraphVolume::GraphVolume(GraphVolume&& other) :
 	other._positions = 0;
 }
 
-GraphVolume::GraphVolume(const GraphVolume& other) {
+GraphVolume::GraphVolume(const GraphVolume& other) :
+	DiscreteVolume(other) {
 
 	create();
 	copy(other);

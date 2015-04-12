@@ -12,9 +12,7 @@ class Skeletonize {
 
 	typedef vigra::MultiArray<3, unsigned char> VolumeType;
 	typedef VolumeType::difference_type         Position;
-	typedef lemon::ListGraph                    Graph;
-	typedef Graph::NodeMap<Position>            PositionMap;
-	typedef Graph::EdgeMap<double>              DistanceMap;
+	typedef GraphVolume::Graph::EdgeMap<double> DistanceMap;
 
 public:
 
@@ -22,7 +20,7 @@ public:
 	 * Create a skeletonizer for the given volume. Inside voxels are assumed to 
 	 * be labelled with 1, background with 0.
 	 */
-	Skeletonize(ExplicitVolume<unsigned char>& volume);
+	Skeletonize(const GraphVolume& graph);
 
 	/**
 	 * Extract the skeleton from the given volume.
@@ -42,16 +40,9 @@ private:
 	};
 
 	/**
-	 * Set the volume to process, try to downsample it on the fly.
+	 * Create a list of all boundary nodes in the graph volume.
 	 */
-	void setVolume(const ExplicitVolume<unsigned char>& volume);
-
-	void downsampleVolume(const ExplicitVolume<unsigned char>& volume);
-
-	/**
-	 * Create the voxel graph to use for skeletonization.
-	 */
-	void createVoxelGraph();
+	void findBoundaryNodes();
 
 	/**
 	 * Initialize the edge map, such that initial edges inside the volume are 
@@ -64,13 +55,7 @@ private:
 	 * Find the root node as the furthest point from the highest boundary 
 	 * distance point.
 	 */
-	Graph::Node findRoot();
-
-	/**
-	 * Set the root node of the skeleton. This should be a point with maximal 
-	 * distance to some internal point.
-	 */
-	void setRoot(Graph::Node root) { _root = root; }
+	void findRoot();
 
 	/**
 	 * Compute or update the shortest paths from the root node to all other 
@@ -102,9 +87,9 @@ private:
 	Skeleton::Position gridToVolume(Position pos) {
 
 		return Skeleton::Position(
-				_volume.getBoundingBox().min().x() + (float)pos[0]*_volume.getResolutionX(),
-				_volume.getBoundingBox().min().y() + (float)pos[1]*_volume.getResolutionY(),
-				_volume.getBoundingBox().min().z() + (float)pos[2]*_volume.getResolutionZ());
+				_graphVolume.getBoundingBox().min().x() + (float)pos[0]*_graphVolume.getResolutionX(),
+				_graphVolume.getBoundingBox().min().y() + (float)pos[1]*_graphVolume.getResolutionY(),
+				_graphVolume.getBoundingBox().min().z() + (float)pos[2]*_graphVolume.getResolutionZ());
 	}
 
 	/**
@@ -127,26 +112,22 @@ private:
 	 */
 	int numNeighbors(const Position& pos);
 
-	// reference to the volume to process
-	ExplicitVolume<unsigned char> _volume;
-
-	bool _downSampleVolume;
-
-	vigra::MultiArray<3, float> _boundaryDistance;
+	// copy of the volume to process, and interior boundary distances
+	vigra::MultiArray<3, unsigned char> _volume;
+	vigra::MultiArray<3, float>         _boundaryDistance;
 
 	// lemon graph compatible datastructures for Dijkstra
-	Graph       _graph;
-	PositionMap _positionMap;
+	const GraphVolume& _graphVolume;
 	DistanceMap _distanceMap;
 
 	double _boundaryWeight;
 
-	lemon::Dijkstra<Graph, DistanceMap> _dijkstra;
+	lemon::Dijkstra<GraphVolume::Graph, DistanceMap> _dijkstra;
 
-	Graph::Node _root;
-	Graph::Node _center;
+	GraphVolume::Graph::Node _root;
+	GraphVolume::Graph::Node _center;
 
-	std::vector<Graph::Node> _boundary;
+	std::vector<GraphVolume::Graph::Node> _boundary;
 
 	float _maxBoundaryDistance2;
 

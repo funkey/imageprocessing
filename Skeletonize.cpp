@@ -40,198 +40,48 @@ util::ProgramOption optionSkeletonExplanationWeight(
 		                          "See skeletonSkipExplainedNodes.",
 		util::_default_value    = 1);
 
-util::ProgramOption optionSkeletonDownsampleVolume(
-		util::_long_name        = "skeletonDownsampleVolume",
-		util::_description_text = "downsample the volume dimensions by the largest power of two that does not change connectivity.");
-
 logger::LogChannel skeletonizelog("skeletonizelog", "[Skeletonize] ");
 
-Skeletonize::Skeletonize(ExplicitVolume<unsigned char>& volume) :
-	_downSampleVolume(optionSkeletonDownsampleVolume),
-	_positionMap(_graph),
-	_distanceMap(_graph),
+Skeletonize::Skeletonize(const GraphVolume& graphVolume) :
+	_volume(
+			vigra::Shape3(
+					graphVolume.width(),
+					graphVolume.height(),
+					graphVolume.depth()
+			),
+			0.0
+	),
+	_boundaryDistance(_volume.shape(), 0.0),
+	_graphVolume(graphVolume),
+	_distanceMap(_graphVolume.graph()),
 	_boundaryWeight(optionSkeletonBoundaryWeight),
-	_dijkstra(_graph, _distanceMap),
+	_dijkstra(_graphVolume.graph(), _distanceMap),
 	_minSegmentLength(optionSkeletonMinSegmentLength),
 	_minSegmentLengthRatio(optionSkeletonMinSegmentLengthRatio),
 	_skipExplainedNodes(optionSkeletonSkipExplainedNodes),
 	_explanationWeight(optionSkeletonExplanationWeight) {
 
-	Timer t(__FUNCTION__);
+	for (GraphVolume::NodeIt n(_graphVolume.graph()); n != lemon::INVALID; ++n)
+		_volume[_graphVolume.positions()[n]] = 1.0;
 
-	setVolume(volume);
-	createVoxelGraph();
+	findBoundaryNodes();
 }
 
 void
-Skeletonize::setVolume(const ExplicitVolume<unsigned char>& volume) {
+Skeletonize::findBoundaryNodes() {
 
-	if (_downSampleVolume)
-		downsampleVolume(volume);
-	else
-		_volume = volume;
+	for (GraphVolume::NodeIt node(_graphVolume.graph()); node != lemon::INVALID; ++node) {
 
-	_boundaryDistance = vigra::MultiArray<3, float>(_volume.data().shape(), 0.0);
-}
+		int numNeighbors = 0;
+		for (GraphVolume::IncEdgeIt e(_graphVolume.graph(), node); e != lemon::INVALID; ++e)
+			numNeighbors++;
 
-void
-Skeletonize::downsampleVolume(const ExplicitVolume<unsigned char>& volume) {
+		if (numNeighbors != GraphVolume::NumNeighbors) {
 
-	vigra::TinyVector<float, 3> origRes = {
-			volume.getResolutionX(),
-			volume.getResolutionY(),
-			volume.getResolutionZ()};
-
-
-	vigra::TinyVector<int, 3> origSize = {
-			(int)volume.width(),
-			(int)volume.height(),
-			(int)volume.depth()};
-
-	float finestRes = -1;
-	int   finestDimension;
-	for (int d = 0; d < 3; d++)
-		if (finestRes < 0 || finestRes > origRes[d]) {
-
-			finestRes = origRes[d];
-			finestDimension = d;
-		}
-
-	// the largest downsample factor to consider
-	int downsampleFactor = 8;
-
-	bool goodLevelFound = false;
-	while (!goodLevelFound) {
-
-		LOG_DEBUG(skeletonizelog)
-				<< "trying to downsample finest dimension by factor "
-				<< downsampleFactor << std::endl;
-
-		vigra::TinyVector<int, 3>   factors;
-		vigra::TinyVector<float, 3> targetRes;
-		vigra::TinyVector<int, 3>   targetSize;
-
-		factors[finestDimension]    = downsampleFactor;
-		targetRes[finestDimension]  = origRes[finestDimension]*downsampleFactor;
-		targetSize[finestDimension] = origSize[finestDimension]/downsampleFactor;
-
-		// the target resolution of the finest dimension, when downsampled with 
-		// current factor
-		float targetFinestRes = finestRes*downsampleFactor;
-
-		// for each other dimension, find best downsample factor
-		for (int d = 0; d < 3; d++) {
-
-			if (d == finestDimension)
-				continue;
-
-			int bestFactor = 0;
-			float minResDiff = 0;
-
-			for (int f = downsampleFactor; f != 0; f /= 2) {
-
-				float targetRes = origRes[d]*f;
-				float resDiff = std::abs(targetFinestRes - targetRes);
-
-				if (bestFactor == 0 || resDiff < minResDiff) {
-
-					bestFactor = f;
-					minResDiff = resDiff;
-				}
-			}
-
-			factors[d]    = bestFactor;
-			targetRes[d]  = origRes[d]*bestFactor;
-			targetSize[d] = origSize[d]/bestFactor;
-		}
-
-		LOG_DEBUG(skeletonizelog)
-				<< "best downsampling factors for each dimension are "
-				<< factors << std::endl;
-
-		_volume = ExplicitVolume<unsigned char>(targetSize[0], targetSize[1], targetSize[2]);
-		_volume.setResolution(targetRes[0], targetRes[1], targetRes[2]);
-		_volume.setBoundingBox(volume.getBoundingBox());
-
-		// copy volume
-		for (int z = 0; z < targetSize[2]; z++)
-		for (int y = 0; y < targetSize[1]; y++)
-		for (int x = 0; x < targetSize[0]; x++)
-			_volume(x, y, z) = volume(x*factors[0], y*factors[1], z*factors[2]);
-
-		int numRegions;
-		try {
-
-			// check for downsampling errors
-			vigra::MultiArray<3, unsigned int> labels(_volume.data().shape());
-			numRegions = vigra::labelMultiArrayWithBackground(
-					_volume.data(),
-					labels);
-
-		} catch (vigra::InvariantViolation& e) {
-
-			LOG_DEBUG(skeletonizelog)
-					<< "downsampled image contains more than 255 connected components"
-					<< std::endl;
-
-			numRegions = 2;
-		}
-
-		LOG_DEBUG(skeletonizelog)
-				<< "downsampled image contains " << numRegions
-				<< " connected components" << std::endl;
-
-		if (numRegions == 1)
-			goodLevelFound = true;
-		else
-			downsampleFactor /= 2;
-	}
-}
-
-void
-Skeletonize::createVoxelGraph() {
-
-	vigra::MultiArray<3, Graph::Node> nodeIds(_volume.data().shape());
-	vigra::GridGraph<3> grid(_volume.data().shape(), vigra::IndirectNeighborhood);
-
-	// add all non-background nodes
-	for (vigra::GridGraph<3>::NodeIt node(grid); node != lemon::INVALID; ++node) {
-
-		if (_volume[node] == Background)
-			continue;
-
-		Graph::Node n   = _graph.addNode();
-		nodeIds[node]   = n;
-		_positionMap[n] = *node;
-	}
-
-	// add all edges between non-background nodes and label boundary nodes 
-	// on-the-fly
-	for (vigra::GridGraph<3>::EdgeIt edge(grid); edge != lemon::INVALID; ++edge) {
-
-		int insideVoxels = (_volume[grid.u(edge)] != Background) + (_volume[grid.v(edge)] != Background);
-
-		if (insideVoxels == 1) {
-
-			if (_volume[grid.u(edge)] != Background)
-				_volume[grid.u(edge)] = Boundary;
-			if (_volume[grid.v(edge)] != Background)
-				_volume[grid.v(edge)] = Boundary;
-		}
-
-		if (insideVoxels != 2)
-			continue;
-
-		Graph::Node u = nodeIds[grid.u(edge)];
-		Graph::Node v = nodeIds[grid.v(edge)];
-
-		_graph.addEdge(u, v);
-	}
-
-	// get a list of boundary nodes
-	for (Graph::NodeIt node(_graph); node != lemon::INVALID; ++node)
-		if (_volume[_positionMap[node]] == Boundary)
 			_boundary.push_back(node);
+			_volume[_graphVolume.positions()[node]] = Boundary;
+		}
+	}
 }
 
 Skeleton
@@ -241,9 +91,7 @@ Skeletonize::getSkeleton() {
 
 	initializeEdgeMap();
 
-	Graph::Node root = findRoot();
-
-	setRoot(root);
+	findRoot();
 
 	int maxNumSegments = optionSkeletonMaxNumSegments;
 	int segmentsFound = 0;
@@ -262,21 +110,21 @@ Skeletonize::initializeEdgeMap() {
 	// of a pixel. Hence, the number of measurements per nm in either direction 
 	// is 1/resolution of this direction.
 	float pitch[3];
-	pitch[0] = 1.0/_volume.getResolutionX();
-	pitch[1] = 1.0/_volume.getResolutionY();
-	pitch[2] = 1.0/_volume.getResolutionZ();
+	pitch[0] = 1.0/_graphVolume.getResolutionX();
+	pitch[1] = 1.0/_graphVolume.getResolutionY();
+	pitch[2] = 1.0/_graphVolume.getResolutionZ();
 
 	vigra::separableMultiDistSquared(
-			_volume.data(),
+			_volume,
 			_boundaryDistance,
 			false,  /* compute distance from object (non-zero) to background (0) */
 			pitch);
 
 	// find center point with maximal boundary distance
 	_maxBoundaryDistance2 = 0;
-	for (Graph::NodeIt node(_graph); node != lemon::INVALID; ++node) {
+	for (GraphVolume::NodeIt node(_graphVolume.graph()); node != lemon::INVALID; ++node) {
 
-		const Position& pos = _positionMap[node];
+		const Position& pos = _graphVolume.positions()[node];
 		if (_boundaryDistance[pos] > _maxBoundaryDistance2) {
 
 			_center = node;
@@ -284,14 +132,12 @@ Skeletonize::initializeEdgeMap() {
 		}
 	}
 
-	using namespace vigra::functor;
-
 	// create initial edge map from boundary penalty
-	for (Graph::EdgeIt e(_graph); e != lemon::INVALID; ++e)
+	for (GraphVolume::EdgeIt e(_graphVolume.graph()); e != lemon::INVALID; ++e)
 		_distanceMap[e] = boundaryPenalty(
 				0.5*(
-						_boundaryDistance[_positionMap[_graph.u(e)]] +
-						_boundaryDistance[_positionMap[_graph.v(e)]]));
+						_boundaryDistance[_graphVolume.positions()[_graphVolume.graph().u(e)]] +
+						_boundaryDistance[_graphVolume.positions()[_graphVolume.graph().v(e)]]));
 
 	// multiply with Euclidean node distances
 	//
@@ -305,18 +151,18 @@ Skeletonize::initializeEdgeMap() {
 
 	float nodeDistances[8];
 	nodeDistances[0] = 0;
-	nodeDistances[1] = _volume.getResolutionZ();
-	nodeDistances[2] = _volume.getResolutionY();
-	nodeDistances[3] = sqrt(pow(_volume.getResolutionY(), 2) + pow(_volume.getResolutionZ(), 2));
-	nodeDistances[4] = _volume.getResolutionX();
-	nodeDistances[5] = sqrt(pow(_volume.getResolutionX(), 2) + pow(_volume.getResolutionZ(), 2));
-	nodeDistances[6] = sqrt(pow(_volume.getResolutionX(), 2) + pow(_volume.getResolutionY(), 2));
-	nodeDistances[7] = sqrt(pow(_volume.getResolutionX(), 2) + pow(_volume.getResolutionY(), 2) + pow(_volume.getResolutionZ(), 2));
+	nodeDistances[1] = _graphVolume.getResolutionZ();
+	nodeDistances[2] = _graphVolume.getResolutionY();
+	nodeDistances[3] = sqrt(pow(_graphVolume.getResolutionY(), 2) + pow(_graphVolume.getResolutionZ(), 2));
+	nodeDistances[4] = _graphVolume.getResolutionX();
+	nodeDistances[5] = sqrt(pow(_graphVolume.getResolutionX(), 2) + pow(_graphVolume.getResolutionZ(), 2));
+	nodeDistances[6] = sqrt(pow(_graphVolume.getResolutionX(), 2) + pow(_graphVolume.getResolutionY(), 2));
+	nodeDistances[7] = sqrt(pow(_graphVolume.getResolutionX(), 2) + pow(_graphVolume.getResolutionY(), 2) + pow(_graphVolume.getResolutionZ(), 2));
 
-	for (Graph::EdgeIt e(_graph); e != lemon::INVALID; ++e) {
+	for (GraphVolume::EdgeIt e(_graphVolume.graph()); e != lemon::INVALID; ++e) {
 
-		Position u = _positionMap[_graph.u(e)];
-		Position v = _positionMap[_graph.v(e)];
+		Position u = _graphVolume.positions()[_graphVolume.graph().u(e)];
+		Position v = _graphVolume.positions()[_graphVolume.graph().v(e)];
 
 		int i = 0;
 		if (u[0] != v[0]) i |= 4;
@@ -327,7 +173,7 @@ Skeletonize::initializeEdgeMap() {
 	}
 }
 
-Skeletonize::Graph::Node
+void
 Skeletonize::findRoot() {
 
 	Timer t(__FUNCTION__);
@@ -335,12 +181,12 @@ Skeletonize::findRoot() {
 	_dijkstra.run(_center);
 
 	// find furthest point on boundary
-	Graph::Node root = Graph::NodeIt(_graph);
+	_root = GraphVolume::NodeIt(_graphVolume.graph());
 	float maxValue = -1;
-	for (Graph::Node n : _boundary)
+	for (GraphVolume::Node n : _boundary)
 		if (_dijkstra.distMap()[n] > maxValue) {
 
-			root     = n;
+			_root    = n;
 			maxValue = _dijkstra.distMap()[n];
 		}
 
@@ -350,9 +196,7 @@ Skeletonize::findRoot() {
 				"could not find a root boundary point");
 
 	// mark root as being part of skeleton
-	_volume[_positionMap[root]] = OnSkeleton;
-
-	return root;
+	_volume[_graphVolume.positions()[_root]] = OnSkeleton;
 }
 
 bool
@@ -363,11 +207,11 @@ Skeletonize::extractLongestSegment() {
 	_dijkstra.run(_root);
 
 	// find furthest point on boundary
-	Graph::Node furthest = Graph::NodeIt(_graph);
+	GraphVolume::Node furthest = GraphVolume::NodeIt(_graphVolume.graph());
 	float maxValue = -1;
-	for (Graph::Node n : _boundary) {
+	for (GraphVolume::Node n : _boundary) {
 
-		if (_skipExplainedNodes && _volume[_positionMap[n]] == Explained)
+		if (_skipExplainedNodes && _volume[_graphVolume.positions()[n]] == Explained)
 			continue;
 
 		if (_dijkstra.distMap()[n] > maxValue) {
@@ -383,19 +227,19 @@ Skeletonize::extractLongestSegment() {
 
 	LOG_DEBUG(skeletonizelog) << "extracting segment with length " << maxValue << std::endl;
 
-	Graph::Node n = furthest;
+	GraphVolume::Node n = furthest;
 
 	// walk backwards to next skeleton point
-	while (_volume[_positionMap[n]] != OnSkeleton) {
+	while (_volume[_graphVolume.positions()[n]] != OnSkeleton) {
 
-		_volume[_positionMap[n]] = OnSkeleton;
+		_volume[_graphVolume.positions()[n]] = OnSkeleton;
 
 		if (_skipExplainedNodes)
-			drawExplanationSphere(_positionMap[n]);
+			drawExplanationSphere(_graphVolume.positions()[n]);
 
-		Graph::Edge pred = _dijkstra.predMap()[n];
-		Graph::Node u = _graph.u(pred);
-		Graph::Node v = _graph.v(pred);
+		GraphVolume::Edge pred = _dijkstra.predMap()[n];
+		GraphVolume::Node u = _graphVolume.graph().u(pred);
+		GraphVolume::Node v = _graphVolume.graph().v(pred);
 
 		n = (u == n ? v : u);
 
@@ -420,13 +264,13 @@ Skeletonize::drawExplanationSphere(const Position& center) {
 
 	double radius2 = _boundaryDistance[center]*pow(_explanationWeight, 2);
 
-	double resX2 = pow(_volume.getResolutionX(), 2);
-	double resY2 = pow(_volume.getResolutionY(), 2);
-	double resZ2 = pow(_volume.getResolutionZ(), 2);
+	double resX2 = pow(_graphVolume.getResolutionX(), 2);
+	double resY2 = pow(_graphVolume.getResolutionY(), 2);
+	double resZ2 = pow(_graphVolume.getResolutionZ(), 2);
 
-	for (Graph::Node n : _boundary) {
+	for (GraphVolume::Node n : _boundary) {
 
-		const Position& pos = _positionMap[n];
+		const Position& pos = _graphVolume.positions()[n];
 		double distance2 =
 				resX2*pow(pos[0] - center[0], 2) +
 				resY2*pow(pos[1] - center[1], 2) +
@@ -454,9 +298,9 @@ Skeletonize::parseVolumeSkeleton() {
 
 	Skeleton skeleton;
 
-	skeleton.setBoundingBox(_volume.getBoundingBox());
+	skeleton.setBoundingBox(_graphVolume.getBoundingBox());
 
-	traverse(_positionMap[_root], skeleton);
+	traverse(_graphVolume.positions()[_root], skeleton);
 
 	return skeleton;
 }
@@ -467,7 +311,7 @@ Skeletonize::traverse(const Position& pos, Skeleton& skeleton) {
 	_volume[pos] = Visited;
 
 	float x, y, z;
-	_volume.getRealLocation(pos[0], pos[1], pos[2], x, y, z);
+	_graphVolume.getRealLocation(pos[0], pos[1], pos[2], x, y, z);
 	Skeleton::Position realPos(x, y, z);
 
 	int neighbors = numNeighbors(pos);
@@ -481,9 +325,9 @@ Skeletonize::traverse(const Position& pos, Skeleton& skeleton) {
 	int sx = (pos[0] == 0 ? 0 : -1);
 	int sy = (pos[1] == 0 ? 0 : -1);
 	int sz = (pos[2] == 0 ? 0 : -1);
-	int ex = (pos[0] == _volume.width()  - 1 ? 0 : 1);
-	int ey = (pos[1] == _volume.height() - 1 ? 0 : 1);
-	int ez = (pos[2] == _volume.depth()  - 1 ? 0 : 1);
+	int ex = (pos[0] == _graphVolume.width()  - 1 ? 0 : 1);
+	int ey = (pos[1] == _graphVolume.height() - 1 ? 0 : 1);
+	int ez = (pos[2] == _graphVolume.depth()  - 1 ? 0 : 1);
 
 	// as soon as 'neighbors' is negative, we know that there are no more 
 	// neighbors left to test (0 is not sufficient, since we count ourselves as 
@@ -515,9 +359,9 @@ Skeletonize::numNeighbors(const Position& pos) {
 	int sx = (pos[0] == 0 ? 0 : -1);
 	int sy = (pos[1] == 0 ? 0 : -1);
 	int sz = (pos[2] == 0 ? 0 : -1);
-	int ex = (pos[0] == _volume.width()  - 1 ? 0 : 1);
-	int ey = (pos[1] == _volume.height() - 1 ? 0 : 1);
-	int ez = (pos[2] == _volume.depth()  - 1 ? 0 : 1);
+	int ex = (pos[0] == _graphVolume.width()  - 1 ? 0 : 1);
+	int ey = (pos[1] == _graphVolume.height() - 1 ? 0 : 1);
+	int ez = (pos[2] == _graphVolume.depth()  - 1 ? 0 : 1);
 
 	for (int dz = sz; dz <= ez; dz++)
 	for (int dy = sy; dy <= ey; dy++)

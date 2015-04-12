@@ -20,6 +20,12 @@ public:
 		_resY(1.0),
 		_resZ(1.0) {}
 
+	DiscreteVolume(const DiscreteVolume& other) :
+		Volume(other),
+		_resX(other._resX),
+		_resY(other._resY),
+		_resZ(other._resZ) {}
+
 	/**
 	 * Create a new discrete volume.
 	 */

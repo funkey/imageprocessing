@@ -13,6 +13,10 @@ public:
 	Volume() :
 		_boundingBoxDirty(true) {}
 
+	Volume(const Volume& other) :
+		_boundingBox(other._boundingBox),
+		_boundingBoxDirty(other._boundingBoxDirty) {}
+
 	/**
 	 * Explicitly set the bounding box of this volume. This marks the bounding 
 	 * box as non-dirty.
