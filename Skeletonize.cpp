@@ -57,9 +57,24 @@ Skeletonize::Skeletonize(const GraphVolume& graphVolume) :
 	_minSegmentLength(optionSkeletonMinSegmentLength),
 	_minSegmentLengthRatio(optionSkeletonMinSegmentLengthRatio),
 	_skipExplainedNodes(optionSkeletonSkipExplainedNodes),
-	_explanationWeight(optionSkeletonExplanationWeight) {
+	_explanationWeight(optionSkeletonExplanationWeight) {}
+
+Skeleton
+Skeletonize::getSkeleton() {
+
+	UTIL_TIME_METHOD;
 
 	findBoundaryNodes();
+
+	initializeEdgeMap();
+
+	findRoot();
+
+	int maxNumSegments = optionSkeletonMaxNumSegments;
+	int segmentsFound = 0;
+	while (extractLongestSegment() && ++segmentsFound < maxNumSegments) {}
+
+	return parseVolumeSkeleton();
 }
 
 void
@@ -79,26 +94,8 @@ Skeletonize::findBoundaryNodes() {
 	}
 }
 
-Skeleton
-Skeletonize::getSkeleton() {
-
-	Timer t(__FUNCTION__);
-
-	initializeEdgeMap();
-
-	findRoot();
-
-	int maxNumSegments = optionSkeletonMaxNumSegments;
-	int segmentsFound = 0;
-	while (extractLongestSegment() && ++segmentsFound < maxNumSegments) {}
-
-	return parseVolumeSkeleton();
-}
-
 void
 Skeletonize::initializeEdgeMap() {
-
-	Timer t(__FUNCTION__);
 
 	// We assume the pitch vigra needs is the number of measurements per unit. 
 	// Our units are nm, and the volume tells us via getResolution?() the size 
@@ -175,8 +172,6 @@ Skeletonize::initializeEdgeMap() {
 void
 Skeletonize::findRoot() {
 
-	Timer t(__FUNCTION__);
-
 	_dijkstra.run(_center);
 
 	// find furthest point on boundary
@@ -200,8 +195,6 @@ Skeletonize::findRoot() {
 
 bool
 Skeletonize::extractLongestSegment() {
-
-	Timer t(__FUNCTION__);
 
 	_dijkstra.run(_root);
 
