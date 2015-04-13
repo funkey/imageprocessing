@@ -81,17 +81,6 @@ private:
 	void drawExplanationSphere(const Position& center);
 
 	/**
-	 * Convert grid positions to volume positions.
-	 */
-	Skeleton::Position gridToVolume(Position pos) {
-
-		return Skeleton::Position(
-				_graphVolume.getBoundingBox().min().x() + (float)pos[0]*_graphVolume.getResolutionX(),
-				_graphVolume.getBoundingBox().min().y() + (float)pos[1]*_graphVolume.getResolutionY(),
-				_graphVolume.getBoundingBox().min().z() + (float)pos[2]*_graphVolume.getResolutionZ());
-	}
-
-	/**
 	 * Compute the boundary penalty term.
 	 */
 	double boundaryPenalty(double boundaryDistance);
