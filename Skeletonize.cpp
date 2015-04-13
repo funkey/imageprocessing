@@ -25,7 +25,7 @@ util::ProgramOption optionSkeletonMinSegmentLength(
 
 util::ProgramOption optionSkeletonMinSegmentLengthRatio(
 		util::_long_name        = "skeletonMinSegmentLengthRatio",
-		util::_description_text = "The mininal length of a segment (including the boundary penalty) as a ration of the largest segment to extract for a skeleton.",
+		util::_description_text = "The mininal length of a segment (including the boundary penalty) as the ratio of the largest segment extracted for a skeleton.",
 		util::_default_value    = 1);
 
 util::ProgramOption optionSkeletonSkipExplainedNodes(
