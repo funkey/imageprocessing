@@ -11,7 +11,7 @@ class NoNodeFound : public Exception {};
 class Skeletonize {
 
 	typedef vigra::MultiArray<3, unsigned char> VolumeType;
-	typedef VolumeType::difference_type         Position;
+	typedef GraphVolume::Position               Position;
 	typedef GraphVolume::Graph::EdgeMap<double> DistanceMap;
 
 public:
@@ -49,6 +49,15 @@ private:
 	 * infinite.
 	 */
 	void initializeEdgeMap();
+
+	inline float& boundaryDistance(const Position& p) {
+
+		return _boundaryDistance[
+				vigra::Shape3(
+						p.x() - _graphVolume.getDiscreteBoundingBox().min().x(),
+						p.y() - _graphVolume.getDiscreteBoundingBox().min().y(),
+						p.z() - _graphVolume.getDiscreteBoundingBox().min().z())];
+	}
 
 	/**
 	 * Find the root node as the furthest point from the highest boundary 

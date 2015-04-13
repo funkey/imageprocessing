@@ -68,7 +68,7 @@ protected:
 	 * To be overwritten by subclasses to compute the bounding box after it was 
 	 * set dirty.
 	 */
-	virtual util::box<float,3> computeBoundingBox() const { return util::box<float,3>(); }
+	virtual util::box<float,3> computeBoundingBox() const = 0;
 
 private:
 

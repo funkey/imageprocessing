@@ -59,6 +59,13 @@ public:
 		_identifier = identifier;
 	}
 
+protected:
+
+	util::box<unsigned int,3> computeDiscreteBoundingBox() const override {
+
+		return util::box<unsigned int,3>(0, 0, 0, size(0), size(1), 1);
+	}
+
 private:
 
 	std::string _identifier;

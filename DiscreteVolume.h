@@ -16,35 +16,44 @@ public:
 	 * one unit per direction.
 	 */
 	DiscreteVolume() :
-		_resX(1.0),
-		_resY(1.0),
-		_resZ(1.0) {}
+		_res(1.0, 1.0, 1.0),
+		_discreteBoundingBoxDirty(true) {}
 
 	DiscreteVolume(const DiscreteVolume& other) :
 		Volume(other),
-		_resX(other._resX),
-		_resY(other._resY),
-		_resZ(other._resZ) {}
+		_res(other._res),
+		_offset(other._offset),
+		_discreteBoundingBox(other._discreteBoundingBox),
+		_discreteBoundingBoxDirty(other._discreteBoundingBoxDirty) {}
 
 	/**
 	 * Create a new discrete volume.
 	 */
 	DiscreteVolume(float resX, float resY, float resZ) :
-		_resX(resX),
-		_resY(resY),
-		_resZ(resZ) {}
+		_res(resX, resY, resZ),
+		_discreteBoundingBoxDirty(true) {}
 
 	/**
 	 * Set the resolution of this discretized volume.
 	 */
-	void setResolution(float resX, float resY, float resZ) { _resX = resX; _resY = resY; _resZ = resZ; }
+	void setResolution(float resX, float resY, float resZ) { _res = util::point<float,3>(resX, resY, resZ); setBoundingBoxDirty(); }
+	void setResolution(const util::point<float,3>& res)    { _res = res; setBoundingBoxDirty(); }
 
 	/**
 	 * Get the resolution of this discretized volume.
 	 */
-	float getResolutionX() const { return _resX; }
-	float getResolutionY() const { return _resY; }
-	float getResolutionZ() const { return _resZ; }
+	float getResolutionX() const { return _res.x(); }
+	float getResolutionY() const { return _res.y(); }
+	float getResolutionZ() const { return _res.z(); }
+
+	const util::point<float,3>& getResolution() const { return _res; }
+
+	/**
+	 * Set the volume location which the discrete coordinates (0,0,0) would 
+	 * have.
+	 */
+	void setOffset(float x, float y, float z)          { setOffset(util::point<float,3>(x, y, z)); }
+	void setOffset(const util::point<float,3>& offset) { _offset = offset; setBoundingBoxDirty(); }
 
 	/**
 	 * Transform a real-valued volume location into discrete coordinates.
@@ -59,9 +68,9 @@ public:
 		z -= getBoundingBox().min().z();
 
 		// discretize
-		dx = x/getResolutionX();
-		dy = y/getResolutionY();
-		dz = z/getResolutionZ();
+		dx = x/_res.x();
+		dy = y/_res.y();
+		dz = z/_res.z();
 	}
 
 	/**
@@ -76,11 +85,87 @@ public:
 		z = dz*getResolutionZ() + getBoundingBox().min().z();
 	}
 
+	/**
+	 * Explicitly set the discrete bounding box of this volume. This marks the 
+	 * bounding box as non-dirty.
+	 */
+	void setDiscreteBoundingBox(const util::box<unsigned int,3>& box) {
+
+		_discreteBoundingBox = box;
+		_discreteBoundingBoxDirty = false;
+
+		setBoundingBoxDirty();
+	}
+
+	/**
+	 * Get the discrete bounding box of this volume.
+	 */
+	util::box<unsigned int,3>& getDiscreteBoundingBox() {
+
+		if (_discreteBoundingBoxDirty) {
+
+			_discreteBoundingBox = computeDiscreteBoundingBox();
+			_discreteBoundingBoxDirty = false;
+		}
+
+		return _discreteBoundingBox;
+	}
+
+	/**
+	 * Get the discrete bounding box of this volume.
+	 */
+	const util::box<unsigned int,3>& getDiscreteBoundingBox() const {
+
+		if (_discreteBoundingBoxDirty) {
+
+			_discreteBoundingBox = computeDiscreteBoundingBox();
+			_discreteBoundingBoxDirty = false;
+		}
+
+		return _discreteBoundingBox;
+	}
+
+	/**
+	 * Reset this volumes discrete bounding box to an empty bounding box.
+	 */
+	void resetDiscreteBoundingBox() { _discreteBoundingBox = util::box<unsigned int,3>(); setBoundingBoxDirty(); }
+
+	/**
+	 * Indicate that the bounding box changed and needs to be recomputed the 
+	 * next time it is queried.
+	 */
+	void setDiscreteBoundingBoxDirty() { _discreteBoundingBoxDirty = true; setBoundingBoxDirty(); }
+
+protected:
+
+	/**
+	 * To be overwritten by subclasses to compute the discrete bounding box 
+	 * after it was set dirty.
+	 */
+	virtual util::box<unsigned int,3> computeDiscreteBoundingBox() const = 0;
+
+	util::box<float,3> computeBoundingBox() const override final {
+
+		const util::box<float,3>& bb = getDiscreteBoundingBox();
+
+		return bb*_res;
+	}
+
 private:
 
-	float _resX;
-	float _resY;
-	float _resZ;
+	util::point<float,3> _res;
+	util::point<float,3> _offset;
+
+	/**
+	 * Since we want the bounding box to be computed as needed, even in a const 
+	 * setting, we make it mutable.
+	 */
+	mutable util::box<unsigned int,3> _discreteBoundingBox;
+
+	/**
+	 * Same for the dirty flag.
+	 */
+	mutable bool _discreteBoundingBoxDirty;
 };
 
 #endif // IMAGEPROCESSING_DISCRETIZATION_H__

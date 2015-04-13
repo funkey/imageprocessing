@@ -8,8 +8,8 @@
 #include <vigra/multi_gridgraph.hxx>
 
 /**
- * A volume represent by nodes and edges in 3D. Provides a node map to store the 
- * 3D positions of the nodes, and a list of boundary nodes.
+ * A volume represented by nodes and edges on a 3D grid. Provides a node map to 
+ * store the 3D grid positions of the nodes.
  */
 class GraphVolume : public DiscreteVolume {
 
@@ -22,7 +22,7 @@ public:
 	typedef Graph::EdgeIt    EdgeIt;
 	typedef Graph::IncEdgeIt IncEdgeIt;
 
-	typedef vigra::TinyVector<float, 3> Position;
+	typedef util::point<unsigned int,3> Position;
 	typedef Graph::NodeMap<Position>    Positions;
 
 	/**
@@ -64,13 +64,9 @@ public:
 	Positions& positions() { return *_positions; }
 	const Positions& positions() const { return *_positions; }
 
-	unsigned int width()  const { return _size.x(); }
-	unsigned int height() const { return _size.y(); }
-	unsigned int depth()  const { return _size.z(); }
-
 protected:
 
-	util::box<float,3> computeBoundingBox() const override;
+	util::box<unsigned int,3> computeDiscreteBoundingBox() const override;
 
 	void create();
 	void copy(const GraphVolume& other);
@@ -80,8 +76,6 @@ private:
 
 	Graph*     _graph;
 	Positions* _positions;
-
-	util::point<unsigned int,3> _size;
 };
 
 template <typename T>
@@ -89,16 +83,11 @@ GraphVolume::GraphVolume(const ExplicitVolume<T>& volume) {
 
 	create();
 
+	setOffset(volume.getBoundingBox().min());
 	setResolution(
 			volume.getResolutionX(),
 			volume.getResolutionY(),
 			volume.getResolutionZ());
-	setBoundingBox(volume.getBoundingBox());
-
-	_size = util::point<unsigned int,3>(
-			volume.width(),
-			volume.height(),
-			volume.depth());
 
 	vigra::MultiArray<3, Graph::Node> nodeIds(volume.data().shape());
 	vigra::GridGraph<3> grid(volume.data().shape(), vigra::IndirectNeighborhood);
@@ -111,7 +100,7 @@ GraphVolume::GraphVolume(const ExplicitVolume<T>& volume) {
 
 		Graph::Node n = _graph->addNode();
 		nodeIds[node] = n;
-		(*_positions)[n] = *node;
+		(*_positions)[n] = Position((*node)[0], (*node)[1], (*node)[2]);
 	}
 
 	// add all edges between non-background nodes

@@ -51,6 +51,13 @@ public:
 
 	unsigned int height() const { return (size() > 0 ? _sections[0]->height() : 0); }
 
+protected:
+
+	util::box<unsigned int,3> computeDiscreteBoundingBox() const override {
+
+		return util::box<unsigned int,3>(0, 0, 0, width(), height(), size());
+	}
+
 private:
 
 	sections_type _sections;

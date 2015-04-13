@@ -24,14 +24,8 @@ public:
 	/**
 	 * Pixel locations belonging to one edge in the skeleton graph.
 	 */
-	typedef vigra::TinyVector<float, 3> Position;
-	typedef std::vector<Position>       Segment;
-
-	/**
-	 * Node and edge property maps.
-	 */
-	typedef Graph::NodeMap<Position> Positions;
-	typedef Graph::EdgeMap<Segment>  Segments;
+	typedef std::vector<GraphVolume::Position> Segment;
+	typedef Graph::EdgeMap<Segment>            Segments;
 
 	/**
 	 * Create an empty skeleton.
@@ -77,10 +71,6 @@ public:
 	 * tree.
 	 */
 	void closeNode();
-
-protected:
-
-	util::box<float,3> computeBoundingBox() const override;
 
 private:
 

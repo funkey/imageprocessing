@@ -84,14 +84,10 @@ public:
 				getResolutionX(),
 				getResolutionY(),
 				getResolutionZ());
-		image.setBoundingBox(
-				util::box<float,3>(
+		image.setOffset(
 						getBoundingBox().min().x(),
 						getBoundingBox().min().y(),
-						getBoundingBox().min().z() + z*getResolutionZ(),
-						getBoundingBox().max().x(),
-						getBoundingBox().max().y(),
-						getBoundingBox().min().z() + (z+1)*getResolutionZ()));
+						getBoundingBox().min().z() + z*getResolutionZ());
 
 		return image;
 	}
@@ -106,6 +102,13 @@ public:
 	unsigned int width()  const { return _data.shape()[0]; }
 	unsigned int height() const { return _data.shape()[1]; }
 	unsigned int depth()  const { return _data.shape()[2]; }
+
+protected:
+
+	util::box<unsigned int,3> computeDiscreteBoundingBox() const override {
+
+		return util::box<unsigned int,3>(0, 0, 0, _data.shape(0), _data.shape(1), _data.shape(2));
+	}
 
 private:
 

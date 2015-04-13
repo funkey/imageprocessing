@@ -6,6 +6,7 @@ GraphVolume::GraphVolume() {
 }
 
 GraphVolume::GraphVolume(GraphVolume&& other) :
+	DiscreteVolume(other),
 	_graph(other._graph),
 	_positions(other._positions) {
 
@@ -63,20 +64,14 @@ GraphVolume::del() {
 	_graph     = 0;
 }
 
-util::box<float,3>
-GraphVolume::computeBoundingBox() const {
+util::box<unsigned int,3>
+GraphVolume::computeDiscreteBoundingBox() const {
 
-	util::box<float,3> bb;
+	util::box<unsigned int,3> bb;
 
-	for (Graph::EdgeIt edge(graph()); edge!= lemon::INVALID; ++edge) {
-
-		const Position& u = positions()[graph().u(edge)];
-		const Position& v = positions()[graph().v(edge)];
-
-		bb += util::box<float,3>(
-				std::min(u[0], v[0]), std::min(u[1], v[1]), std::min(u[2], v[2]),
-				std::max(u[0], v[0]), std::max(u[1], v[1]), std::max(u[2], v[2]));
-	}
+	// bounding box of discrete points
+	for (Graph::NodeIt node(graph()); node != lemon::INVALID; ++node)
+		bb.fit(positions()[node]);
 
 	return bb;
 }

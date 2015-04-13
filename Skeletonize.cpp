@@ -45,9 +45,9 @@ logger::LogChannel skeletonizelog("skeletonizelog", "[Skeletonize] ");
 Skeletonize::Skeletonize(const GraphVolume& graphVolume) :
 	_boundaryDistance(
 			vigra::Shape3(
-					graphVolume.width(),
-					graphVolume.height(),
-					graphVolume.depth()
+					graphVolume.getDiscreteBoundingBox().width(),
+					graphVolume.getDiscreteBoundingBox().height(),
+					graphVolume.getDiscreteBoundingBox().depth()
 			)),
 	_graphVolume(graphVolume),
 	_distanceMap(_graphVolume.graph()),
@@ -89,6 +89,7 @@ Skeletonize::findBoundaryNodes() {
 		if (numNeighbors != GraphVolume::NumNeighbors) {
 
 			_boundary.push_back(node);
+			std::cout << "b " << _graphVolume.graph().id(node) << std::endl;
 			_nodeLabels[node] = Boundary;
 		}
 	}
@@ -108,7 +109,7 @@ Skeletonize::initializeEdgeMap() {
 
 	_boundaryDistance = 0;
 	for (GraphVolume::NodeIt n(_graphVolume.graph()); n != lemon::INVALID; ++n)
-		_boundaryDistance[_graphVolume.positions()[n]] = 1.0;
+		boundaryDistance(_graphVolume.positions()[n]) = 1.0;
 
 	vigra::separableMultiDistSquared(
 			_boundaryDistance,
@@ -121,10 +122,10 @@ Skeletonize::initializeEdgeMap() {
 	for (GraphVolume::NodeIt node(_graphVolume.graph()); node != lemon::INVALID; ++node) {
 
 		const Position& pos = _graphVolume.positions()[node];
-		if (_boundaryDistance[pos] > _maxBoundaryDistance2) {
+		if (boundaryDistance(pos) > _maxBoundaryDistance2) {
 
 			_center = node;
-			_maxBoundaryDistance2 = _boundaryDistance[pos];
+			_maxBoundaryDistance2 = boundaryDistance(pos);
 		}
 	}
 
@@ -132,8 +133,8 @@ Skeletonize::initializeEdgeMap() {
 	for (GraphVolume::EdgeIt e(_graphVolume.graph()); e != lemon::INVALID; ++e)
 		_distanceMap[e] = boundaryPenalty(
 				0.5*(
-						_boundaryDistance[_graphVolume.positions()[_graphVolume.graph().u(e)]] +
-						_boundaryDistance[_graphVolume.positions()[_graphVolume.graph().v(e)]]));
+						boundaryDistance(_graphVolume.positions()[_graphVolume.graph().u(e)]) +
+						boundaryDistance(_graphVolume.positions()[_graphVolume.graph().v(e)])));
 
 	// multiply with Euclidean node distances
 	//
@@ -177,12 +178,14 @@ Skeletonize::findRoot() {
 	// find furthest point on boundary
 	_root = GraphVolume::NodeIt(_graphVolume.graph());
 	float maxValue = -1;
-	for (GraphVolume::Node n : _boundary)
+	for (GraphVolume::Node n : _boundary) {
+		std::cout << "c " << _graphVolume.graph().id(n) << std::endl;
 		if (_dijkstra.distMap()[n] > maxValue) {
 
 			_root    = n;
 			maxValue = _dijkstra.distMap()[n];
 		}
+	}
 
 	if (maxValue == -1)
 		UTIL_THROW_EXCEPTION(
@@ -254,7 +257,7 @@ Skeletonize::extractLongestSegment() {
 void
 Skeletonize::drawExplanationSphere(const Position& center) {
 
-	double radius2 = _boundaryDistance[center]*pow(_explanationWeight, 2);
+	double radius2 = boundaryDistance(center)*pow(_explanationWeight, 2);
 
 	double resX2 = pow(_graphVolume.getResolutionX(), 2);
 	double resY2 = pow(_graphVolume.getResolutionY(), 2);
@@ -290,7 +293,8 @@ Skeletonize::parseVolumeSkeleton() {
 
 	Skeleton skeleton;
 
-	skeleton.setBoundingBox(_graphVolume.getBoundingBox());
+	skeleton.setOffset(_graphVolume.getBoundingBox().min());
+	skeleton.setResolution(_graphVolume.getResolution());
 
 	traverse(_root, skeleton);
 
