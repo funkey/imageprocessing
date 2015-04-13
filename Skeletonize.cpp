@@ -43,26 +43,21 @@ util::ProgramOption optionSkeletonExplanationWeight(
 logger::LogChannel skeletonizelog("skeletonizelog", "[Skeletonize] ");
 
 Skeletonize::Skeletonize(const GraphVolume& graphVolume) :
-	_volume(
+	_boundaryDistance(
 			vigra::Shape3(
 					graphVolume.width(),
 					graphVolume.height(),
 					graphVolume.depth()
-			),
-			0.0
-	),
-	_boundaryDistance(_volume.shape(), 0.0),
+			)),
 	_graphVolume(graphVolume),
 	_distanceMap(_graphVolume.graph()),
 	_boundaryWeight(optionSkeletonBoundaryWeight),
 	_dijkstra(_graphVolume.graph(), _distanceMap),
+	_nodeLabels(_graphVolume.graph(), Inside),
 	_minSegmentLength(optionSkeletonMinSegmentLength),
 	_minSegmentLengthRatio(optionSkeletonMinSegmentLengthRatio),
 	_skipExplainedNodes(optionSkeletonSkipExplainedNodes),
 	_explanationWeight(optionSkeletonExplanationWeight) {
-
-	for (GraphVolume::NodeIt n(_graphVolume.graph()); n != lemon::INVALID; ++n)
-		_volume[_graphVolume.positions()[n]] = 1.0;
 
 	findBoundaryNodes();
 }
@@ -79,7 +74,7 @@ Skeletonize::findBoundaryNodes() {
 		if (numNeighbors != GraphVolume::NumNeighbors) {
 
 			_boundary.push_back(node);
-			_volume[_graphVolume.positions()[node]] = Boundary;
+			_nodeLabels[node] = Boundary;
 		}
 	}
 }
@@ -114,8 +109,12 @@ Skeletonize::initializeEdgeMap() {
 	pitch[1] = 1.0/_graphVolume.getResolutionY();
 	pitch[2] = 1.0/_graphVolume.getResolutionZ();
 
+	_boundaryDistance = 0;
+	for (GraphVolume::NodeIt n(_graphVolume.graph()); n != lemon::INVALID; ++n)
+		_boundaryDistance[_graphVolume.positions()[n]] = 1.0;
+
 	vigra::separableMultiDistSquared(
-			_volume,
+			_boundaryDistance,
 			_boundaryDistance,
 			false,  /* compute distance from object (non-zero) to background (0) */
 			pitch);
@@ -196,7 +195,7 @@ Skeletonize::findRoot() {
 				"could not find a root boundary point");
 
 	// mark root as being part of skeleton
-	_volume[_graphVolume.positions()[_root]] = OnSkeleton;
+	_nodeLabels[_root] = OnSkeleton;
 }
 
 bool
@@ -211,7 +210,7 @@ Skeletonize::extractLongestSegment() {
 	float maxValue = -1;
 	for (GraphVolume::Node n : _boundary) {
 
-		if (_skipExplainedNodes && _volume[_graphVolume.positions()[n]] == Explained)
+		if (_skipExplainedNodes && _nodeLabels[n] == Explained)
 			continue;
 
 		if (_dijkstra.distMap()[n] > maxValue) {
@@ -230,9 +229,9 @@ Skeletonize::extractLongestSegment() {
 	GraphVolume::Node n = furthest;
 
 	// walk backwards to next skeleton point
-	while (_volume[_graphVolume.positions()[n]] != OnSkeleton) {
+	while (_nodeLabels[n] != OnSkeleton) {
 
-		_volume[_graphVolume.positions()[n]] = OnSkeleton;
+		_nodeLabels[n] = OnSkeleton;
 
 		if (_skipExplainedNodes)
 			drawExplanationSphere(_graphVolume.positions()[n]);
@@ -277,8 +276,8 @@ Skeletonize::drawExplanationSphere(const Position& center) {
 				resZ2*pow(pos[2] - center[2], 2);
 
 		if (distance2 <= radius2)
-			if (_volume[pos] != OnSkeleton)
-				_volume[pos] = Explained;
+			if (_nodeLabels[n] != OnSkeleton)
+				_nodeLabels[n] = Explained;
 	}
 }
 
@@ -300,21 +299,23 @@ Skeletonize::parseVolumeSkeleton() {
 
 	skeleton.setBoundingBox(_graphVolume.getBoundingBox());
 
-	traverse(_graphVolume.positions()[_root], skeleton);
+	traverse(_root, skeleton);
 
 	return skeleton;
 }
 
 void
-Skeletonize::traverse(const Position& pos, Skeleton& skeleton) {
+Skeletonize::traverse(const GraphVolume::Node& n, Skeleton& skeleton) {
 
-	_volume[pos] = Visited;
+	Position pos = _graphVolume.positions()[n];
+
+	_nodeLabels[n] = Visited;
 
 	float x, y, z;
 	_graphVolume.getRealLocation(pos[0], pos[1], pos[2], x, y, z);
 	Skeleton::Position realPos(x, y, z);
 
-	int neighbors = numNeighbors(pos);
+	int neighbors = numNeighbors(n);
 	bool isNode = (neighbors != 2);
 
 	if (isNode)
@@ -322,28 +323,18 @@ Skeletonize::traverse(const Position& pos, Skeleton& skeleton) {
 	else
 		skeleton.extendEdge(realPos);
 
-	int sx = (pos[0] == 0 ? 0 : -1);
-	int sy = (pos[1] == 0 ? 0 : -1);
-	int sz = (pos[2] == 0 ? 0 : -1);
-	int ex = (pos[0] == _graphVolume.width()  - 1 ? 0 : 1);
-	int ey = (pos[1] == _graphVolume.height() - 1 ? 0 : 1);
-	int ez = (pos[2] == _graphVolume.depth()  - 1 ? 0 : 1);
+	for (GraphVolume::IncEdgeIt e(_graphVolume.graph(), n); e != lemon::INVALID && neighbors > 0; ++e) {
 
-	// as soon as 'neighbors' is negative, we know that there are no more 
-	// neighbors left to test (0 is not sufficient, since we count ourselves as 
-	// well)
-	for (int dz = sz; dz <= ez && neighbors >= 0; dz++)
-	for (int dy = sy; dy <= ey && neighbors >= 0; dy++)
-	for (int dx = sx; dx <= ex && neighbors >= 0; dx++) {
+		GraphVolume::Node neighbor = (_graphVolume.graph().u(e) == n ? _graphVolume.graph().v(e) : _graphVolume.graph().u(e));
 
-		vigra::Shape3 p = pos + vigra::Shape3(dx, dy, dz);
-
-		if (_volume[p] >= OnSkeleton) {
+		if (_nodeLabels[neighbor] >= OnSkeleton) {
 
 			neighbors--;
 
-			if (_volume[p] != Visited)
-				traverse(p, skeleton);
+			if (_nodeLabels[neighbor] != Visited) {
+
+				traverse(neighbor, skeleton);
+			}
 		}
 	}
 
@@ -352,27 +343,17 @@ Skeletonize::traverse(const Position& pos, Skeleton& skeleton) {
 }
 
 int
-Skeletonize::numNeighbors(const Position& pos) {
+Skeletonize::numNeighbors(const GraphVolume::Node& n) {
 
 	int num = 0;
 
-	int sx = (pos[0] == 0 ? 0 : -1);
-	int sy = (pos[1] == 0 ? 0 : -1);
-	int sz = (pos[2] == 0 ? 0 : -1);
-	int ex = (pos[0] == _graphVolume.width()  - 1 ? 0 : 1);
-	int ey = (pos[1] == _graphVolume.height() - 1 ? 0 : 1);
-	int ez = (pos[2] == _graphVolume.depth()  - 1 ? 0 : 1);
+	for (GraphVolume::IncEdgeIt e(_graphVolume.graph(), n); e != lemon::INVALID; ++e) {
 
-	for (int dz = sz; dz <= ez; dz++)
-	for (int dy = sy; dy <= ey; dy++)
-	for (int dx = sx; dx <= ex; dx++) {
+		GraphVolume::Node neighbor = (_graphVolume.graph().u(e) == n ? _graphVolume.graph().v(e) : _graphVolume.graph().u(e));
 
-		if (_volume(pos[0] + dx, pos[1] + dy, pos[2] + dz) >= OnSkeleton)
+		if (_nodeLabels[neighbor] >= OnSkeleton)
 			num++;
 	}
-
-	if (_volume[pos] >= OnSkeleton)
-		num--;
 
 	return num;
 }

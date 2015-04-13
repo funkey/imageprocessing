@@ -29,14 +29,13 @@ public:
 
 private:
 
-	enum VoxelLabel {
+	enum NodeLabel {
 
-		Background = 0,
-		Inside     = 1, /* ordinary inside voxels and initial values */
-		Boundary   = 2, /* inside voxels on boundary */
-		Explained  = 3, /* boundary voxels that are within a threshold distance to skeleton voxels */
-		OnSkeleton = 4, /* skeleton voxels */
-		Visited    = 5  /* skeleton voxels that have been added to Skeleton datastructure (eventually, all OnSkeleton voxels)*/
+		Inside     = 0, /* ordinary inside voxels and initial values */
+		Boundary   = 1, /* inside voxels on boundary */
+		Explained  = 2, /* boundary voxels that are within a threshold distance to skeleton voxels */
+		OnSkeleton = 3, /* skeleton voxels */
+		Visited    = 4  /* skeleton voxels that have been added to Skeleton datastructure (eventually, all OnSkeleton voxels)*/
 	};
 
 	/**
@@ -105,16 +104,15 @@ private:
 	/**
 	 * Recursively discover the skeleton graph from the volume annotations.
 	 */
-	void traverse(const Position& pos, Skeleton& skeleton);
+	void traverse(const GraphVolume::Node& n, Skeleton& skeleton);
 
 	/**
 	 * The number of neighbors of a skeleton position in the volume.
 	 */
-	int numNeighbors(const Position& pos);
+	int numNeighbors(const GraphVolume::Node& n);
 
-	// copy of the volume to process, and interior boundary distances
-	vigra::MultiArray<3, unsigned char> _volume;
-	vigra::MultiArray<3, float>         _boundaryDistance;
+	// interior boundary distances
+	vigra::MultiArray<3, float> _boundaryDistance;
 
 	// lemon graph compatible datastructures for Dijkstra
 	const GraphVolume& _graphVolume;
@@ -126,6 +124,8 @@ private:
 
 	GraphVolume::Graph::Node _root;
 	GraphVolume::Graph::Node _center;
+
+	GraphVolume::Graph::NodeMap<NodeLabel> _nodeLabels;
 
 	std::vector<GraphVolume::Graph::Node> _boundary;
 
