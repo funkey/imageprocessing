@@ -85,9 +85,9 @@ public:
 			unsigned int dx, unsigned int dy, unsigned int dz,
 			float& x, float& y, float& z)  const{
 
-		x = dx*getResolutionX() + getBoundingBox().min().x();
-		y = dy*getResolutionY() + getBoundingBox().min().y();
-		z = dz*getResolutionZ() + getBoundingBox().min().z();
+		x = dx*_res.x() + _offset.x();
+		y = dy*_res.y() + _offset.y();
+		z = dz*_res.z() + _offset.z();
 	}
 
 	/**
