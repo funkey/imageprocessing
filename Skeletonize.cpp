@@ -306,17 +306,13 @@ Skeletonize::traverse(const GraphVolume::Node& n, Skeleton& skeleton) {
 
 	_nodeLabels[n] = Visited;
 
-	float x, y, z;
-	_graphVolume.getRealLocation(pos[0], pos[1], pos[2], x, y, z);
-	Skeleton::Position realPos(x, y, z);
-
 	int neighbors = numNeighbors(n);
 	bool isNode = (neighbors != 2);
 
 	if (isNode)
-		skeleton.openNode(realPos);
+		skeleton.openNode(pos);
 	else
-		skeleton.extendEdge(realPos);
+		skeleton.extendEdge(pos);
 
 	for (GraphVolume::IncEdgeIt e(_graphVolume.graph(), n); e != lemon::INVALID && neighbors > 0; ++e) {
 
