@@ -18,26 +18,6 @@ public:
 		_boundingBoxDirty(other._boundingBoxDirty) {}
 
 	/**
-	 * Explicitly set the bounding box of this volume. This marks the bounding 
-	 * box as non-dirty.
-	 */
-	void setBoundingBox(const util::box<float,3>& box) { _boundingBox = box; _boundingBoxDirty = false; }
-
-	/**
-	 * Get the bounding box of this volume.
-	 */
-	util::box<float,3>& getBoundingBox() {
-
-		if (_boundingBoxDirty) {
-
-			_boundingBox = computeBoundingBox();
-			_boundingBoxDirty = false;
-		}
-
-		return _boundingBox;
-	}
-
-	/**
 	 * Get the bounding box of this volume.
 	 */
 	const util::box<float,3>& getBoundingBox() const {
@@ -50,11 +30,6 @@ public:
 
 		return _boundingBox;
 	}
-
-	/**
-	 * Reset this volumes bounding box to an empty bounding box.
-	 */
-	void resetBoundingBox() { _boundingBox = util::box<float,3>(); }
 
 	/**
 	 * Indicate that the bounding box changed and needs to be recomputed the 

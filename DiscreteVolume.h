@@ -13,7 +13,7 @@ public:
 
 	/**
 	 * Default constructor. Creates a discretized volume with a resolution of 
-	 * one unit per direction.
+	 * one unit per direction and an offset of (0,0,0).
 	 */
 	DiscreteVolume() :
 		_res(1.0, 1.0, 1.0),
@@ -36,8 +36,8 @@ public:
 	/**
 	 * Set the resolution of this discretized volume.
 	 */
-	void setResolution(float resX, float resY, float resZ) { _res = util::point<float,3>(resX, resY, resZ); setBoundingBoxDirty(); }
-	void setResolution(const util::point<float,3>& res)    { _res = res; setBoundingBoxDirty(); }
+	void setResolution(float resX, float resY, float resZ) { _res = util::point<float,3>(resX, resY, resZ); Volume::setBoundingBoxDirty(); }
+	void setResolution(const util::point<float,3>& res)    { _res = res; Volume::setBoundingBoxDirty(); }
 
 	/**
 	 * Get the resolution of this discretized volume.
@@ -45,7 +45,6 @@ public:
 	float getResolutionX() const { return _res.x(); }
 	float getResolutionY() const { return _res.y(); }
 	float getResolutionZ() const { return _res.z(); }
-
 	const util::point<float,3>& getResolution() const { return _res; }
 
 	/**
@@ -53,7 +52,13 @@ public:
 	 * have.
 	 */
 	void setOffset(float x, float y, float z)          { setOffset(util::point<float,3>(x, y, z)); }
-	void setOffset(const util::point<float,3>& offset) { _offset = offset; setBoundingBoxDirty(); }
+	void setOffset(const util::point<float,3>& offset) { _offset = offset; Volume::setBoundingBoxDirty(); }
+
+	/**
+	 * Get the volume location which the discrete coordinates (0,0,0) would 
+	 * have.
+	 */
+	const util::point<float,3>& getOffset() const { return _offset; }
 
 	/**
 	 * Transform a real-valued volume location into discrete coordinates.
@@ -86,32 +91,6 @@ public:
 	}
 
 	/**
-	 * Explicitly set the discrete bounding box of this volume. This marks the 
-	 * bounding box as non-dirty.
-	 */
-	void setDiscreteBoundingBox(const util::box<unsigned int,3>& box) {
-
-		_discreteBoundingBox = box;
-		_discreteBoundingBoxDirty = false;
-
-		setBoundingBoxDirty();
-	}
-
-	/**
-	 * Get the discrete bounding box of this volume.
-	 */
-	util::box<unsigned int,3>& getDiscreteBoundingBox() {
-
-		if (_discreteBoundingBoxDirty) {
-
-			_discreteBoundingBox = computeDiscreteBoundingBox();
-			_discreteBoundingBoxDirty = false;
-		}
-
-		return _discreteBoundingBox;
-	}
-
-	/**
 	 * Get the discrete bounding box of this volume.
 	 */
 	const util::box<unsigned int,3>& getDiscreteBoundingBox() const {
@@ -126,15 +105,15 @@ public:
 	}
 
 	/**
-	 * Reset this volumes discrete bounding box to an empty bounding box.
-	 */
-	void resetDiscreteBoundingBox() { _discreteBoundingBox = util::box<unsigned int,3>(); setBoundingBoxDirty(); }
-
-	/**
 	 * Indicate that the bounding box changed and needs to be recomputed the 
 	 * next time it is queried.
 	 */
-	void setDiscreteBoundingBoxDirty() { _discreteBoundingBoxDirty = true; setBoundingBoxDirty(); }
+	void setDiscreteBoundingBoxDirty() { _discreteBoundingBoxDirty = true; Volume::setBoundingBoxDirty(); }
+
+	/**
+	 * Fallback for subclasses.
+	 */
+	void setBoundingBoxDirty() { setDiscreteBoundingBoxDirty(); }
 
 protected:
 
@@ -148,7 +127,7 @@ protected:
 
 		const util::box<float,3>& bb = getDiscreteBoundingBox();
 
-		return bb*_res;
+		return bb*_res + _offset;
 	}
 
 private:

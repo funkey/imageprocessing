@@ -89,7 +89,6 @@ Skeletonize::findBoundaryNodes() {
 		if (numNeighbors != GraphVolume::NumNeighbors) {
 
 			_boundary.push_back(node);
-			std::cout << "b " << _graphVolume.graph().id(node) << std::endl;
 			_nodeLabels[node] = Boundary;
 		}
 	}
@@ -179,7 +178,6 @@ Skeletonize::findRoot() {
 	_root = GraphVolume::NodeIt(_graphVolume.graph());
 	float maxValue = -1;
 	for (GraphVolume::Node n : _boundary) {
-		std::cout << "c " << _graphVolume.graph().id(n) << std::endl;
 		if (_dijkstra.distMap()[n] > maxValue) {
 
 			_root    = n;
@@ -293,7 +291,7 @@ Skeletonize::parseVolumeSkeleton() {
 
 	Skeleton skeleton;
 
-	skeleton.setOffset(_graphVolume.getBoundingBox().min());
+	skeleton.setOffset(_graphVolume.getOffset());
 	skeleton.setResolution(_graphVolume.getResolution());
 
 	traverse(_root, skeleton);

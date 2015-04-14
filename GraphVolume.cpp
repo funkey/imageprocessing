@@ -71,7 +71,7 @@ GraphVolume::computeDiscreteBoundingBox() const {
 
 	// bounding box of discrete points
 	for (Graph::NodeIt node(graph()); node != lemon::INVALID; ++node)
-		bb.fit(positions()[node]);
+		bb.fit(util::box<unsigned int,3>(positions()[node], positions()[node] + util::point<unsigned int,3>(1, 1, 1)));
 
 	return bb;
 }

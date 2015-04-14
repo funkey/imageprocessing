@@ -16,12 +16,6 @@ SubStackSelector::updateOutputs() {
 	if (!_subStack)
 		_subStack = new ImageStack();
 
-	_subStack->clear();
-	_subStack->setResolution(
-			_stack->getResolutionX(),
-			_stack->getResolutionY(),
-			_stack->getResolutionZ());
-
 	LOG_ALL(substackselectorlog)
 			<< "selecting substack from stack of size "
 			<< _stack->size() << std::endl;
@@ -57,6 +51,7 @@ SubStackSelector::updateOutputs() {
 		lastImage = _stack->size() - 1;
 	}
 
+	_subStack->clear();
 	for (unsigned int i = _firstImage; i <= lastImage; i++)
 		_subStack->add((*_stack)[i]);
 
@@ -66,14 +61,8 @@ SubStackSelector::updateOutputs() {
 	float resZ = _stack->getResolutionZ();
 
 	_subStack->setResolution(resX, resY, resZ);
-
-	// set the bounds of the new stack
-	_subStack->setBoundingBox(_stack->getBoundingBox());
-
-	float minZ    = _stack->getBoundingBox().min().z();
-	float subMinZ = minZ + _firstImage*resZ;
-	float subMaxZ = minZ + lastImage*resZ;
-
-	_subStack->getBoundingBox().min().z() = subMinZ;
-	_subStack->getBoundingBox().max().z() = subMaxZ;
+	_subStack->setOffset(
+			_stack->getBoundingBox().min().x(),
+			_stack->getBoundingBox().min().y(),
+			_stack->getBoundingBox().min().z() + _firstImage*resZ);
 }

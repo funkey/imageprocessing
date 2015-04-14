@@ -83,12 +83,6 @@ GraphVolume::GraphVolume(const ExplicitVolume<T>& volume) {
 
 	create();
 
-	setOffset(volume.getBoundingBox().min());
-	setResolution(
-			volume.getResolutionX(),
-			volume.getResolutionY(),
-			volume.getResolutionZ());
-
 	vigra::MultiArray<3, Graph::Node> nodeIds(volume.data().shape());
 	vigra::GridGraph<3> grid(volume.data().shape(), vigra::IndirectNeighborhood);
 
@@ -116,6 +110,10 @@ GraphVolume::GraphVolume(const ExplicitVolume<T>& volume) {
 			_graph->addEdge(u, v);
 		}
 	}
+
+	// our (0,0,0) would be at the same location as volume's (0,0,0)
+	setOffset(volume.getOffset());
+	setResolution(volume.getResolution());
 }
 
 #endif // IMAGEPROCESSING_GRAPH_VOLUME_H__
