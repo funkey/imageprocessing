@@ -309,7 +309,7 @@ Skeletonize::traverse(const GraphVolume::Node& n, Skeleton& skeleton) {
 	int neighbors = numNeighbors(n);
 	bool isNode = (neighbors != 2);
 
-	if (isNode)
+	if (isNode || n == _root)
 		skeleton.openNode(pos);
 	else
 		skeleton.extendEdge(pos);
