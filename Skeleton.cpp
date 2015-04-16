@@ -1,20 +1,23 @@
 #include <util/assert.h>
 #include "Skeleton.h"
 
-Skeleton::Skeleton() {
+Skeleton::Skeleton() :
+	_prevNode(lemon::INVALID) {
 
 	create();
 }
 
 Skeleton::Skeleton(Skeleton&& other) :
 	GraphVolume(std::forward<GraphVolume>(other)),
-	_segments(other._segments) {
+	_prevNode(lemon::INVALID),
+	_diameters(other._diameters) {
 
-	other._segments = 0;
+	other._diameters = 0;
 }
 
 Skeleton::Skeleton(const Skeleton& other) :
-	GraphVolume(other) {
+	GraphVolume(other),
+	_prevNode(lemon::INVALID) {
 
 	create();
 	copy(other);
@@ -39,7 +42,7 @@ void
 Skeleton::create() {
 
 	GraphVolume::create();
-	_segments = new Segments(graph());
+	_diameters = new Diameters(graph());
 }
 
 void
@@ -47,8 +50,8 @@ Skeleton::copy(const Skeleton& other) {
 
 	GraphVolume::copy(other);
 
-	for (EdgeIt e(graph()); e != lemon::INVALID; ++e)
-		(*_segments)[e] = (*other._segments)[e];
+	for (NodeIt n(graph()); n != lemon::INVALID; ++n)
+		(*_diameters)[n] = (*other._diameters)[n];
 }
 
 void
@@ -56,39 +59,48 @@ Skeleton::del() {
 
 	GraphVolume::del();
 
-	if (_segments)
-		delete _segments;
+	if (_diameters)
+		delete _diameters;
 
-	_segments = 0;
+	_diameters= 0;
 }
 
-void
-Skeleton::openNode(Position pos) {
+Skeleton::Node
+Skeleton::openSegment(Position pos, float diameter) {
+
+	Node node = extendSegment(pos, diameter);
+	_currentSegmentPath.push(node);
+
+	return node;
+}
+
+Skeleton::Node
+Skeleton::extendSegment(Position pos, float diameter) {
 
 	Node node = graph().addNode();
-
-	if (_currentSegment.size() > 0) {
-
-		Node prev = _currentPath.top();
-		Edge edge = graph().addEdge(prev, node);
-
-		(*_segments)[edge] = _currentSegment;
-		_currentSegment.clear();
-	}
-
 	positions()[node] = pos;
-	_currentPath.push(node);
+	diameters()[node] = diameter;
+
+	if (_prevNode != lemon::INVALID)
+		graph().addEdge(_prevNode, node);
+	_prevNode = node;
+
+	return node;
 }
 
 void
-Skeleton::extendEdge(Position pos) {
+Skeleton::closeSegment() {
 
-	_currentSegment.push_back(pos);
-}
+	if (_currentSegmentPath.size() == 0)
+		UTIL_THROW_EXCEPTION(
+				UsageError,
+				"closeSegment() called without prior call to openSegment()");
 
-void
-Skeleton::closeNode() {
+	_currentSegmentPath.pop();
 
-	_currentPath.pop();
+	if (_currentSegmentPath.size() > 0)
+		_prevNode = _currentSegmentPath.top();
+	else
+		_prevNode = Node(lemon::INVALID);
 }
 

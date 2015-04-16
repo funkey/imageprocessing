@@ -21,11 +21,7 @@ public:
 	typedef Graph::Node      Node;
 	typedef Graph::Edge      Edge;
 
-	/**
-	 * Pixel locations belonging to one edge in the skeleton graph.
-	 */
-	typedef std::vector<GraphVolume::Position> Segment;
-	typedef Graph::EdgeMap<Segment>            Segments;
+	typedef Graph::NodeMap<float> Diameters;
 
 	/**
 	 * Create an empty skeleton.
@@ -50,27 +46,27 @@ public:
 	~Skeleton();
 
 	/**
-	 * Get the edge property map that stores a list of positions for each 
-	 * skeleton edge.
+	 * Start a new segment (a chain of nodes) in the skeleton at the given 
+	 * position.
 	 */
-	Segments& segments() { return *_segments; }
-	const Segments& segments() const { return *_segments; }
+	Node openSegment(Position pos, float diameter);
 
 	/**
-	 * Start a new node in the skeleton at the given position.
+	 * Extend the currently open segment by one position.
 	 */
-	void openNode(Position pos);
+	Node extendSegment(Position pos, float diameter);
 
 	/**
-	 * Extend the edge of the currently open node by one position.
+	 * Close the currently open segment, backtrack to the end of the previous 
+	 * segment in the tree.
 	 */
-	void extendEdge(Position pos);
+	void closeSegment();
 
 	/**
-	 * Close the currently open node, backtrack to the previous node in the 
-	 * tree.
+	 * Get a node property map with the diameters of each skeleton node.
 	 */
-	void closeNode();
+	Diameters& diameters() { return *_diameters; }
+	const Diameters& diameters() const { return *_diameters; }
 
 private:
 
@@ -78,10 +74,12 @@ private:
 	void copy(const Skeleton& other);
 	void del();
 
-	Segments* _segments;
+	// list of previous segment end nodes
+	std::stack<Node> _currentSegmentPath;
+	// previously added node
+	Node             _prevNode;
 
-	std::stack<Node>      _currentPath;
-	std::vector<Position> _currentSegment;
+	Diameters* _diameters;
 };
 
 #endif // IMAGEPROCESSING_TUBES_SKELETON_H__
