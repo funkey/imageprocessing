@@ -310,27 +310,25 @@ Skeletonize::traverse(const GraphVolume::Node& n, Skeleton& skeleton) {
 	bool isNode = (neighbors != 2);
 
 	if (isNode || n == _root)
-		skeleton.openNode(pos);
+		skeleton.openSegment(pos, boundaryDistance(pos));
 	else
-		skeleton.extendEdge(pos);
+		skeleton.extendSegment(pos, boundaryDistance(pos));
 
 	for (GraphVolume::IncEdgeIt e(_graphVolume.graph(), n); e != lemon::INVALID && neighbors > 0; ++e) {
 
+		if (_distanceMap[e] != 0.0)
+			continue;
+
 		GraphVolume::Node neighbor = (_graphVolume.graph().u(e) == n ? _graphVolume.graph().v(e) : _graphVolume.graph().u(e));
 
-		if (_nodeLabels[neighbor] >= OnSkeleton) {
+		neighbors--;
 
-			neighbors--;
-
-			if (_nodeLabels[neighbor] != Visited) {
-
-				traverse(neighbor, skeleton);
-			}
-		}
+		if (_nodeLabels[neighbor] != Visited)
+			traverse(neighbor, skeleton);
 	}
 
-	if (isNode)
-		skeleton.closeNode();
+	if (isNode || n == _root)
+		skeleton.closeSegment();
 }
 
 int
@@ -338,13 +336,9 @@ Skeletonize::numNeighbors(const GraphVolume::Node& n) {
 
 	int num = 0;
 
-	for (GraphVolume::IncEdgeIt e(_graphVolume.graph(), n); e != lemon::INVALID; ++e) {
-
-		GraphVolume::Node neighbor = (_graphVolume.graph().u(e) == n ? _graphVolume.graph().v(e) : _graphVolume.graph().u(e));
-
-		if (_nodeLabels[neighbor] >= OnSkeleton)
+	for (GraphVolume::IncEdgeIt e(_graphVolume.graph(), n); e != lemon::INVALID; ++e)
+		if (_distanceMap[e] == 0.0)
 			num++;
-	}
 
 	return num;
 }
