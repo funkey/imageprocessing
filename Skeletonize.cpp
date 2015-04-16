@@ -45,9 +45,9 @@ logger::LogChannel skeletonizelog("skeletonizelog", "[Skeletonize] ");
 Skeletonize::Skeletonize(const GraphVolume& graphVolume) :
 	_boundaryDistance(
 			vigra::Shape3(
-					graphVolume.getDiscreteBoundingBox().width(),
-					graphVolume.getDiscreteBoundingBox().height(),
-					graphVolume.getDiscreteBoundingBox().depth()
+					graphVolume.getDiscreteBoundingBox().width()  + 2,
+					graphVolume.getDiscreteBoundingBox().height() + 2,
+					graphVolume.getDiscreteBoundingBox().depth()  + 2
 			)),
 	_graphVolume(graphVolume),
 	_distanceMap(_graphVolume.graph()),

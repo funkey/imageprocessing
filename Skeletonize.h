@@ -54,9 +54,9 @@ private:
 
 		return _boundaryDistance[
 				vigra::Shape3(
-						p.x() - _graphVolume.getDiscreteBoundingBox().min().x(),
-						p.y() - _graphVolume.getDiscreteBoundingBox().min().y(),
-						p.z() - _graphVolume.getDiscreteBoundingBox().min().z())];
+						p.x() + 1 - _graphVolume.getDiscreteBoundingBox().min().x(),
+						p.y() + 1 - _graphVolume.getDiscreteBoundingBox().min().y(),
+						p.z() + 1 - _graphVolume.getDiscreteBoundingBox().min().z())];
 	}
 
 	/**
