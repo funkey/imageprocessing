@@ -83,11 +83,19 @@ public:
 	 */
 	void getRealLocation(
 			unsigned int dx, unsigned int dy, unsigned int dz,
-			float& x, float& y, float& z)  const{
+			float& x, float& y, float& z) const {
 
 		x = dx*_res.x() + _offset.x();
 		y = dy*_res.y() + _offset.y();
 		z = dz*_res.z() + _offset.z();
+	}
+	void getRealLocation(
+			const util::point<unsigned int,3>& d,
+			util::point<float,3>&              r) const {
+
+		getRealLocation(
+				d.x(), d.y(), d.z(),
+				r.x(), r.y(), r.z());
 	}
 
 	/**
