@@ -97,14 +97,11 @@ Skeletonize::findBoundaryNodes() {
 void
 Skeletonize::initializeEdgeMap() {
 
-	// We assume the pitch vigra needs is the number of measurements per unit. 
-	// Our units are nm, and the volume tells us via getResolution?() the size 
-	// of a pixel. Hence, the number of measurements per nm in either direction 
-	// is 1/resolution of this direction.
+	// the pitch is the number of units per voxel dimension
 	float pitch[3];
-	pitch[0] = 1.0/_graphVolume.getResolutionX();
-	pitch[1] = 1.0/_graphVolume.getResolutionY();
-	pitch[2] = 1.0/_graphVolume.getResolutionZ();
+	pitch[0] = _graphVolume.getResolutionX();
+	pitch[1] = _graphVolume.getResolutionY();
+	pitch[2] = _graphVolume.getResolutionZ();
 
 	_boundaryDistance = 0;
 	for (GraphVolume::NodeIt n(_graphVolume.graph()); n != lemon::INVALID; ++n)
@@ -310,9 +307,9 @@ Skeletonize::traverse(const GraphVolume::Node& n, Skeleton& skeleton) {
 	bool isNode = (neighbors != 2);
 
 	if (isNode || n == _root)
-		skeleton.openSegment(pos, boundaryDistance(pos));
+		skeleton.openSegment(pos, sqrt(boundaryDistance(pos)));
 	else
-		skeleton.extendSegment(pos, boundaryDistance(pos));
+		skeleton.extendSegment(pos, sqrt(boundaryDistance(pos)));
 
 	for (GraphVolume::IncEdgeIt e(_graphVolume.graph(), n); e != lemon::INVALID && neighbors > 0; ++e) {
 
