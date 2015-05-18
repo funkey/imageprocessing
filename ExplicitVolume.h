@@ -68,6 +68,8 @@ public:
 	 */
 	ValueType&       operator[](vigra::Shape3 pos)       { return _data[pos]; }
 	const ValueType& operator[](vigra::Shape3 pos) const { return _data[pos]; }
+	ValueType&       operator[](util::point<unsigned int, 3> pos)       { return _data(pos.x(), pos.y(), pos.z()); }
+	const ValueType& operator[](util::point<unsigned int, 3> pos) const { return _data(pos.x(), pos.y(), pos.z()); }
 	ValueType&       operator()(unsigned int x, unsigned int y, unsigned int z)       { return _data(x, y, z); }
 	const ValueType& operator()(unsigned int x, unsigned int y, unsigned int z) const { return _data(x, y, z); }
 
