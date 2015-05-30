@@ -2,6 +2,7 @@
 #define IMAGEPROCESSING_EXPLICIT_VOLUME_H__
 
 #include <vigra/multi_array.hxx>
+#include <vigra/functorexpression.hxx>
 #include "DiscreteVolume.h"
 #include "ImageStack.h"
 
@@ -104,6 +105,40 @@ public:
 	unsigned int width()  const { return _data.shape()[0]; }
 	unsigned int height() const { return _data.shape()[1]; }
 	unsigned int depth()  const { return _data.shape()[2]; }
+
+	/**
+	 * Ensure that the values of this ExplicitVolume are in the range [0,1], if 
+	 * they aren't already. If the max exceeds 1 but not 255, values will be 
+	 * scaled with 1/255. If the max exceeds 255 but not 65536, values will be 
+	 * scaled with 65536. If the max is even higher, values will be scaled with 
+	 * 1/max.
+	 *
+	 * Should the min be negative, a shift of -min will be applied before 
+	 * determining the max.
+	 */
+	void normalize() {
+
+		ValueType min, max;
+		ValueType shift = 0;
+		data().minmax(&min, &max);
+		if (min < 0) {
+			shift = -min;
+			min   = 0;
+			max  += shift;
+		}
+		if (max > 1.0) {
+			if (max <= 255.0)
+				max = 255;
+			else if (max <= 65536)
+				max = 65536;
+		}
+		using namespace vigra::functor;
+		if (shift != 0 || max != 1.0)
+			vigra::transformMultiArray(
+					data(),
+					data(),
+					(Arg1() - Param(shift))/Param(max));
+	}
 
 protected:
 
