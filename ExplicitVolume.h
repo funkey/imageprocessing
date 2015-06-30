@@ -123,10 +123,9 @@ public:
 		data().minmax(&min, &max);
 		if (min < 0) {
 			shift = -min;
-			min   = 0;
 			max  += shift;
 		}
-		if (max > 1.0) {
+		if (min >= 0 && max > 1.0) {
 			if (max <= 255.0)
 				max = 255;
 			else if (max <= 65536)
@@ -134,10 +133,11 @@ public:
 		}
 		using namespace vigra::functor;
 		if (shift != 0 || max != 1.0)
+
 			vigra::transformMultiArray(
 					data(),
 					data(),
-					(Arg1() - Param(shift))/Param(max));
+					(Arg1() + Param(shift))/Param(max));
 	}
 
 protected:
