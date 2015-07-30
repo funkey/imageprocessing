@@ -46,9 +46,9 @@ GraphVolume::create() {
 void
 GraphVolume::copy(const GraphVolume& other) {
 
-	lemon::GraphCopy<Graph, Graph> copy(*other._graph, *_graph);
+	lemon::GraphCopy<Graph, Graph> copy(other._graph(), *_graph);
 
-	copy.nodeMap(*_positions, *other._positions);
+	copy.nodeMap(other._positions(), *_positions);
 	copy.run();
 }
 
