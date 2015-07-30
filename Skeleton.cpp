@@ -20,7 +20,7 @@ Skeleton::copy(const Skeleton& other) {
 	_currentSegmentPath = other._currentSegmentPath;
 	_prevNode = other._prevNode;
 	for (NodeIt n(graph()); n != lemon::INVALID; ++n)
-		(*_diameters)[n] = (*other._diameters)[n];
+		(*_diameters)[n] = other.diameters()[n];
 }
 
 Skeleton::Node
