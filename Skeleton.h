@@ -1,6 +1,7 @@
 #ifndef IMAGEPROCESSING_TUBES_SKELETON_H__
 #define IMAGEPROCESSING_TUBES_SKELETON_H__
 
+#include <memory>
 #include <stack>
 #include <vector>
 #include <lemon/list_graph.h>
@@ -31,7 +32,7 @@ public:
 	/**
 	 * Move constructor.
 	 */
-	Skeleton(Skeleton&& other);
+	Skeleton(Skeleton&& other) = default;
 
 	/**
 	 * Copy constructor.
@@ -42,8 +43,6 @@ public:
 	 * Assignment operator.
 	 */
 	Skeleton& operator=(const Skeleton& other);
-
-	~Skeleton();
 
 	/**
 	 * Start a new segment (a chain of nodes) in the skeleton at the given 
@@ -70,16 +69,14 @@ public:
 
 private:
 
-	void create();
 	void copy(const Skeleton& other);
-	void del();
 
 	// list of previous segment end nodes
 	std::stack<Node> _currentSegmentPath;
 	// previously added node
-	Node             _prevNode;
+	Node             _prevNode = lemon::INVALID;
 
-	Diameters* _diameters;
+	std::unique_ptr<Diameters> _diameters{new Diameters(graph())};
 };
 
 #endif // IMAGEPROCESSING_TUBES_SKELETON_H__

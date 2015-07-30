@@ -1,68 +1,26 @@
 #include <util/assert.h>
 #include "Skeleton.h"
 
-Skeleton::Skeleton() :
-	_prevNode(lemon::INVALID) {
-
-	create();
-}
-
-Skeleton::Skeleton(Skeleton&& other) :
-	GraphVolume(std::forward<GraphVolume>(other)),
-	_prevNode(lemon::INVALID),
-	_diameters(other._diameters) {
-
-	other._diameters = 0;
-}
+Skeleton::Skeleton() {}
 
 Skeleton::Skeleton(const Skeleton& other) :
-	GraphVolume(other),
-	_prevNode(lemon::INVALID) {
-
-	create();
+	GraphVolume(other) {
 	copy(other);
 }
 
 Skeleton&
 Skeleton::operator=(const Skeleton& other) {
-
-	del();
-	create();
+	GraphVolume::operator=(other);
 	copy(other);
-
 	return *this;
-}
-
-Skeleton::~Skeleton() {
-
-	del();
-}
-
-void
-Skeleton::create() {
-
-	GraphVolume::create();
-	_diameters = new Diameters(graph());
 }
 
 void
 Skeleton::copy(const Skeleton& other) {
-
-	GraphVolume::copy(other);
-
+	_currentSegmentPath = other._currentSegmentPath;
+	_prevNode = other._prevNode;
 	for (NodeIt n(graph()); n != lemon::INVALID; ++n)
 		(*_diameters)[n] = (*other._diameters)[n];
-}
-
-void
-Skeleton::del() {
-
-	GraphVolume::del();
-
-	if (_diameters)
-		delete _diameters;
-
-	_diameters= 0;
 }
 
 Skeleton::Node

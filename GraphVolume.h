@@ -1,6 +1,7 @@
 #ifndef IMAGEPROCESSING_GRAPH_VOLUME_H__
 #define IMAGEPROCESSING_GRAPH_VOLUME_H__
 
+#include <memory>
 #include "ExplicitVolume.h"
 #include <lemon/list_graph.h>
 #define WITH_LEMON
@@ -44,7 +45,7 @@ public:
 	/**
 	 * Move constructor.
 	 */
-	GraphVolume(GraphVolume&& other);
+	GraphVolume(GraphVolume&& other) = default;
 
 	/**
 	 * Copy constructor.
@@ -56,8 +57,6 @@ public:
 	 */
 	GraphVolume& operator=(const GraphVolume& other);
 
-	~GraphVolume();
-
 	Graph& graph() { return *_graph; }
 	const Graph& graph() const { return *_graph; }
 
@@ -68,21 +67,15 @@ protected:
 
 	util::box<unsigned int,3> computeDiscreteBoundingBox() const override;
 
-	void create();
 	void copy(const GraphVolume& other);
-	void del();
 
 private:
-
-	Graph*     _graph;
-	Positions* _positions;
+	std::unique_ptr<Graph>     _graph{new Graph};
+	std::unique_ptr<Positions> _positions{new Positions(*_graph)};
 };
 
 template <typename T>
 GraphVolume::GraphVolume(const ExplicitVolume<T>& volume) {
-
-	create();
-
 	vigra::MultiArray<3, Graph::Node> nodeIds(volume.data().shape());
 	vigra::GridGraph<3> grid(volume.data().shape(), vigra::IndirectNeighborhood);
 
