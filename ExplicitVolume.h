@@ -109,9 +109,7 @@ public:
 	/**
 	 * Ensure that the values of this ExplicitVolume are in the range [0,1], if 
 	 * they aren't already. If the max exceeds 1 but not 255, values will be 
-	 * scaled with 1/255. If the max exceeds 255 but not 65536, values will be 
-	 * scaled with 65536. If the max is even higher, values will be scaled with 
-	 * 1/max.
+	 * scaled with 1/255. Otherwise, values will be scaled with 1/max.
 	 *
 	 * Should the min be negative, a shift of -min will be applied before 
 	 * determining the max.
@@ -125,12 +123,8 @@ public:
 			shift = -min;
 			max  += shift;
 		}
-		if (min >= 0 && max > 1.0) {
-			if (max <= 255.0)
-				max = 255;
-			else if (max <= 65536)
-				max = 65536;
-		}
+		if (min >= 0 && max > 1.0 && max <= 255.0)
+			max = 255;
 		using namespace vigra::functor;
 		if (shift != 0 || max != 1.0)
 
