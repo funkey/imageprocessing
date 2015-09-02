@@ -107,11 +107,25 @@ Skeletonize::initializeEdgeMap() {
 	for (GraphVolume::NodeIt n(_graphVolume.graph()); n != lemon::INVALID; ++n)
 		boundaryDistance(_graphVolume.positions()[n]) = 1.0;
 
-	vigra::separableMultiDistSquared(
-			_boundaryDistance,
-			_boundaryDistance,
-			false,  /* compute distance from object (non-zero) to background (0) */
-			pitch);
+	if (_graphVolume.getDiscreteBoundingBox().depth() == 1) {
+
+		LOG_DEBUG(skeletonizelog) << "performing 2D distance transform for boundary penalty" << std::endl;
+
+		// perform 2D distance transform if depth is 1
+		vigra::separableMultiDistSquared(
+				_boundaryDistance.bind<2>(1), // only on center section (0 and 2 are padded)
+				_boundaryDistance.bind<2>(1),
+				false,  /* compute distance from object (non-zero) to background (0) */
+				pitch);
+
+	} else {
+
+		vigra::separableMultiDistSquared(
+				_boundaryDistance,
+				_boundaryDistance,
+				false,  /* compute distance from object (non-zero) to background (0) */
+				pitch);
+	}
 
 	// find center point with maximal boundary distance
 	_maxBoundaryDistance2 = 0;
