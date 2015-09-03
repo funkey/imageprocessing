@@ -310,36 +310,55 @@ Skeletonize::parseVolumeSkeleton() {
 	return skeleton;
 }
 
+// The old version of this was recursing directly and deeply, leading to stack
+// overflows in stack restricted environments (e.g. multithreading).  The
+// current version is a fairly direct iteratization of the old, directly
+// recursive version.
 void
-Skeletonize::traverse(const GraphVolume::Node& n, Skeleton& skeleton) {
+Skeletonize::traverse(const GraphVolume::Node& root, Skeleton& skeleton) {
+	// DFS of nodes from root.  Data-wise, Nodes are just integer values.
+	std::stack<GraphVolume::Node> traversal;
+	traversal.push(root);
+	while (!traversal.empty()) {
+		const GraphVolume::Node n = traversal.top();
+		const int nNeighbors = numNeighbors(n);
 
-	Position pos = _graphVolume.positions()[n];
+		// Special nodes that open new segments.
+		const bool isOpeningNode = n == _root || nNeighbors != 2;
 
-	_nodeLabels[n] = Visited;
-
-	int neighbors = numNeighbors(n);
-	bool isNode = (neighbors != 2);
-
-	if (isNode || n == _root)
-		skeleton.openSegment(pos, sqrt(boundaryDistance(pos)));
-	else
-		skeleton.extendSegment(pos, sqrt(boundaryDistance(pos)));
-
-	for (GraphVolume::IncEdgeIt e(_graphVolume.graph(), n); e != lemon::INVALID && neighbors > 0; ++e) {
-
-		if (_distanceMap[e] != 0.0)
+		// The second time we see a node, we are in back-traversal, popping from
+		// traversal stack and potentially closing segments.
+		if (_nodeLabels[n] == Visited) {
+			if (isOpeningNode) skeleton.closeSegment();
+			traversal.pop();
 			continue;
+		}
 
-		GraphVolume::Node neighbor = (_graphVolume.graph().u(e) == n ? _graphVolume.graph().v(e) : _graphVolume.graph().u(e));
+		// Otherwise, we're seeing the node for the first time, so opening /
+		// extending segment.
+		_nodeLabels[n] = Visited;
+		const Position pos = _graphVolume.positions()[n];
+		const float boundDist = sqrt(boundaryDistance(pos));
+		if (isOpeningNode) {
+			skeleton.openSegment(pos, boundDist);
+		} else {
+			skeleton.extendSegment(pos, boundDist);
+		}
 
-		neighbors--;
+		// Iterate through neighbors and put unseen ones onto traversal stack.  The
+		// loop checks against nNeighbors to allow early termination.
+		GraphVolume::IncEdgeIt e(_graphVolume.graph(), n);
+		for (int i = 0; i < nNeighbors; ++e /* increment e, not i */) {
+			assert(e != lemon::INVALID);  // Should never occur.
 
-		if (_nodeLabels[neighbor] != Visited)
-			traverse(neighbor, skeleton);
+			// Only increment i if we are using this edge.
+			if (_distanceMap[e] != 0.0) continue;
+			++i;
+
+			const GraphVolume::Node neighbor = (_graphVolume.graph().u(e) == n ? _graphVolume.graph().v(e) : _graphVolume.graph().u(e));
+			if (_nodeLabels[neighbor] != Visited) traversal.push(neighbor);
+		}
 	}
-
-	if (isNode || n == _root)
-		skeleton.closeSegment();
 }
 
 int
