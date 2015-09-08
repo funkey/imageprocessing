@@ -107,6 +107,18 @@ public:
 	unsigned int depth()  const { return _data.shape()[2]; }
 
 	/**
+	 * Resize this volume and initialize with zeros.
+	 */
+	void resize(
+			unsigned int width,
+			unsigned int height,
+			unsigned int depth) {
+
+		_data.reshape(vigra::Shape3(width, height, depth));
+		setDiscreteBoundingBoxDirty();
+	}
+
+	/**
 	 * Ensure that the values of this ExplicitVolume are in the range [0,1], if 
 	 * they aren't already. If the max exceeds 1 but not 255, values will be 
 	 * scaled with 1/255. Otherwise, values will be scaled with 1/max.
