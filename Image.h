@@ -2,8 +2,6 @@
 #define IMAGE_H__
 
 #include <vigra/multi_array.hxx>
-
-#include <pipeline/Data.h>
 #include "DiscreteVolume.h"
 
 typedef vigra::MultiArray<2, float> array_type;
@@ -11,7 +9,7 @@ typedef vigra::MultiArray<2, float> array_type;
 /**
  * A vigra-compatible image class.
  */
-class Image : public pipeline::Data, public DiscreteVolume, public array_type {
+class Image : public DiscreteVolume, public array_type {
 
 public:
 

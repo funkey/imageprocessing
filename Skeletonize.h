@@ -4,6 +4,7 @@
 #include <imageprocessing/ExplicitVolume.h>
 #define WITH_LEMON
 #include <lemon/dijkstra.h>
+#include <util/exceptions.h>
 #include "Skeleton.h"
 
 class NoNodeFound : public Exception {};

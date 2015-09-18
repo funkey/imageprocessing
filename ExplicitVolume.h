@@ -3,8 +3,8 @@
 
 #include <vigra/multi_array.hxx>
 #include <vigra/functorexpression.hxx>
+#include <imageprocessing/Image.h>
 #include "DiscreteVolume.h"
-#include "ImageStack.h"
 
 /**
  * Explicit representation of a discrete volume as a vigra multi-array.
@@ -29,20 +29,6 @@ public:
 	ExplicitVolume(const ExplicitVolume<T>& other) :
 		DiscreteVolume(other),
 		_data(other.data()) {}
-
-	/**
-	 * Create a volume from an image stack.
-	 */
-	ExplicitVolume(const ImageStack& stack) :
-		DiscreteVolume(stack),
-		_data(vigra::Shape3(stack.width(), stack.height(), stack.size())) {
-
-		// fill volume image by image
-		for (unsigned int i = 0; i < stack.size(); i++)
-			vigra::copyMultiArray(
-					*stack[i],
-					_data.template bind<2>(i));
-	}
 
 	/**
 	 * Create a new explicit volume of the given size.
