@@ -20,7 +20,7 @@ private:
 
 		ComponentPaintVisitor();
 
-		void visitNode(boost::shared_ptr<ComponentTree::Node> node) const;
+		void visitNode(boost::shared_ptr<ComponentTree::Node> node);
 
 		void visitEdge(boost::shared_ptr<ComponentTree::Node> parent, boost::shared_ptr<ComponentTree::Node> child) const;
 
@@ -31,6 +31,8 @@ private:
 	};
 
 	void updateRecording();
+
+	void drawPixelList(boost::shared_ptr<ComponentTree::Node> root);
 
 	boost::shared_ptr<ComponentTree> _componentTree;
 

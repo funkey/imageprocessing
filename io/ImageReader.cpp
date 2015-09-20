@@ -37,6 +37,7 @@ ImageReader::readImage() {
 
 	// allocate image
 	_image = new Image(info.width(), info.height());
+	_image->setIdentifiyer(_filename);
 
 	try {
 
@@ -58,12 +59,10 @@ ImageReader::readImage() {
 	float factor;
 	if (strcmp(info.getPixelType(), "UINT8") == 0)
 		factor = 255.0;
-	else if (strcmp(info.getPixelType(), "INT16") == 0)
-		factor = 511.0;
 	else {
 
 		factor = 1.0;
-		LOG_ERROR(imagereaderlog) << _filename << " has a unsupported pixel format: " << info.getPixelType() << std::endl;
+		LOG_DEBUG(imagereaderlog) << _filename << " has pixel format " << info.getPixelType() << ", will not scale values" << std::endl;
 	}
 
 	vigra::transformImage(

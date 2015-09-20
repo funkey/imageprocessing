@@ -1,6 +1,8 @@
 #ifndef IMAGEPROCESSING_VOLUME_H__
 #define IMAGEPROCESSING_VOLUME_H__
 
+#include "BoundingBox.h"
+
 /**
  * Base for classes representing a 3D volume.
  */
@@ -9,34 +11,73 @@ class Volume {
 public:
 
 	Volume() :
-		_resX(1.0),
-		_resY(1.0),
-		_resZ(1.0),
-		_minX(0.0),
-		_minY(0.0),
-		_minZ(0.0) {}
+		_boundingBoxDirty(true) {}
 
-	void setResolution(float resX, float resY, float resZ) { _resX = resX; _resY = resY; _resZ = resZ; }
+	/**
+	 * Explicitly set the bounding box of this volume. This marks the bounding 
+	 * box as non-dirty.
+	 */
+	void setBoundingBox(const BoundingBox& box) { _boundingBox = box; _boundingBoxDirty = false; }
 
-	float getResolutionX() const { return _resX; }
-	float getResolutionY() const { return _resY; }
-	float getResolutionZ() const { return _resZ; }
+	/**
+	 * Get the bounding box of this volume.
+	 */
+	BoundingBox& getBoundingBox() {
 
-	void setOffset(float minX, float minY, float minZ) { _minX = minX; _minY = minY; _minZ = minZ; }
+		if (_boundingBoxDirty) {
 
-	float getOffsetX() const { return _minX; }
-	float getOffsetY() const { return _minY; }
-	float getOffsetZ() const { return _minZ; }
+			_boundingBox = computeBoundingBox();
+			_boundingBoxDirty = false;
+		}
+
+		return _boundingBox;
+	}
+
+	/**
+	 * Get the bounding box of this volume.
+	 */
+	const BoundingBox& getBoundingBox() const {
+
+		if (_boundingBoxDirty) {
+
+			_boundingBox = computeBoundingBox();
+			_boundingBoxDirty = false;
+		}
+
+		return _boundingBox;
+	}
+
+	/**
+	 * Reset this volumes bounding box to an empty bounding box.
+	 */
+	void resetBoundingBox() { _boundingBox = BoundingBox(); }
+
+	/**
+	 * Indicate that the bounding box changed and needs to be recomputed the 
+	 * next time it is queried.
+	 */
+	void setBoundingBoxDirty() { _boundingBoxDirty = true; }
+
+protected:
+
+	/**
+	 * To be overwritten by subclasses to compute the bounding box after it was 
+	 * set dirty.
+	 */
+	virtual BoundingBox computeBoundingBox() const { return BoundingBox(); }
 
 private:
 
-	float _resX;
-	float _resY;
-	float _resZ;
+	/**
+	 * Since we want the bounding box to be computed as needed, even in a const 
+	 * setting, we make it mutable.
+	 */
+	mutable BoundingBox _boundingBox;
 
-	float _minX;
-	float _minY;
-	float _minZ;
+	/**
+	 * Same for the dirty flag.
+	 */
+	mutable bool _boundingBoxDirty;
 };
 
 

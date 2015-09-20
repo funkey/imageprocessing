@@ -42,26 +42,54 @@ ComponentTreePainter::updateRecording() {
 	foreach (boost::shared_ptr<ComponentTree::Node> node, _componentTree->getRoot()->getChildren())
 		_componentTree->visit(node, painter);
 
+	// use the root node to draw the whole pixel list
+	drawPixelList(_componentTree->getRoot());
+
 	glDisable(GL_BLEND);
 
 	stopRecording();
+}
+
+void
+ComponentTreePainter::drawPixelList(boost::shared_ptr<ComponentTree::Node> root) {
+
+	boost::shared_ptr<ConnectedComponent> component = root->getComponent();
+
+	glDisable(GL_DEPTH_TEST);
+
+	util::point<double> previous(0, 0);
+	foreach (util::point<unsigned int> p, component->getPixels()) {
+
+		// go almost all the way
+		util::point<double> target = previous + (util::point<double>(p) - previous)*0.9;
+
+		glColor4f(1, 0, 0, 1);
+		glBegin(GL_LINES);
+		glVertex2d(previous.x  + 0.5, previous.y + 0.5);
+		glVertex2d(target.x  + 0.5, target.y + 0.5);
+		glColor4f(0, 1, 0, 1);
+		glVertex2d(target.x  + 0.5, target.y + 0.5);
+		glVertex2d(p.x  + 0.5, p.y + 0.5);
+		glEnd();
+
+		previous = p;
+	}
 }
 
 ComponentTreePainter::ComponentPaintVisitor::ComponentPaintVisitor() :
 	_zScale(-50.0) {}
 
 void
-ComponentTreePainter::ComponentPaintVisitor::visitNode(boost::shared_ptr<ComponentTree::Node> node) const {
+ComponentTreePainter::ComponentPaintVisitor::visitNode(boost::shared_ptr<ComponentTree::Node> node) {
 
 	boost::shared_ptr<ConnectedComponent> component = node->getComponent();
 
 	double value = component->getValue();
 
-	glColor4f(value, value, value, 0.5);
+	LOG_ALL(componenttreepainterlog) << "drawing component with " << (component->getPixels().second - component->getPixels().first) << " pixels" << std::endl;
 
 	glEnable(GL_DEPTH_TEST);
-
-	LOG_ALL(componenttreepainterlog) << "drawing component with " << (component->getPixels().second - component->getPixels().first) << " pixels" << std::endl;
+	glColor4f(value, value, value, 0.5);
 
 	foreach (util::point<unsigned int> p, component->getPixels()) {
 

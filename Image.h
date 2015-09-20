@@ -14,10 +14,11 @@ class Image : public pipeline::Data, public array_type {
 
 public:
 
-	Image() {};
+	Image(std::string identifier = std::string()) : _identifier(identifier) {};
 
-	Image(size_t width, size_t height, float initialValue = 0.0f) :
-		array_type(array_type::difference_type(width, height)) {
+	Image(size_t width, size_t height, float initialValue = 0.0f, std::string identifier = std::string()) :
+		array_type(array_type::difference_type(width, height)),
+		_identifier(identifier) {
 
 		init(initialValue);
 	}
@@ -44,6 +45,20 @@ public:
 
 		reshape(array_type::difference_type(width, height));
 	}
+
+	const std::string& getIdentifier() {
+
+		return _identifier;
+	}
+
+	void setIdentifiyer(std::string identifier) {
+
+		_identifier = identifier;
+	}
+
+private:
+
+	std::string _identifier;
 };
 
 #endif // IMAGE_H__

@@ -40,6 +40,10 @@ ImageStackDirectoryWriter::write(std::string basename) {
 		_dirty = false;
 	}
 
+	LOG_DEBUG(imagestackdirectorywriterlog) << "requesting image update" << std::endl;
+
+	updateInputs();
+
 	LOG_DEBUG(imagestackdirectorywriterlog) << "attempting to write stack" << std::endl;
 
 	if (!_stack.isSet()) {
@@ -47,12 +51,6 @@ ImageStackDirectoryWriter::write(std::string basename) {
 		LOG_ERROR(imagestackdirectorywriterlog) << "no input image stack set" << std::endl;
 		return false;
 	}
-
-	LOG_DEBUG(imagestackdirectorywriterlog) << "requesting image update" << std::endl;
-
-	updateInputs();
-
-	boost::unique_lock<boost::shared_mutex> lock(_stack->getMutex());
 
 	boost::filesystem::path directory(_directory);
 

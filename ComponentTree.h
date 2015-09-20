@@ -24,6 +24,11 @@ public:
 	public:
 
 		/**
+		 * Create a new node that is not pointing to a component, yet.
+		 */
+		Node();
+
+		/**
 		 * Create a new node from a connected component.
 		 *
 		 * @param component The connected component that is to be represented by
@@ -53,11 +58,27 @@ public:
 		void addChild(boost::shared_ptr<Node> componentNode);
 
 		/**
+		 * Remove a child from this node.
+		 *
+		 * @param child A shared pointer to the child that is to be removed.
+		 *
+		 * @return true, if the child was found and removed.
+		 */
+		bool removeChild(boost::shared_ptr<Node> child);
+
+		/**
 		 * Get all children of this node.
 		 *
 		 * @return A vector of shared pointers to the children of this node.
 		 */
-		std::vector<boost::shared_ptr<Node> > getChildren();
+		const std::vector<boost::shared_ptr<Node> >& getChildren() const;
+
+		/**
+		 * Set the connected component represented by this node.
+		 *
+		 * @param component The connected component help by this node.
+		 */
+		void setComponent(boost::shared_ptr<ConnectedComponent> component);
 
 		/**
 		 * Get the connected component represented by this node.

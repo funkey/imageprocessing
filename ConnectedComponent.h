@@ -4,16 +4,19 @@
 #include <boost/shared_ptr.hpp>
 
 #include <imageprocessing/Image.h>
+#include <imageprocessing/PixelList.h>
 #include <util/point.hpp>
 #include <util/rect.hpp>
 #include <util/Logger.h>
+#include <util/Hashable.h>
 #include <pipeline/all.h>
+#include "ConnectedComponentHash.h"
 
-class ConnectedComponent : public pipeline::Data {
+class ConnectedComponent : public pipeline::Data, public Hashable<ConnectedComponent, ConnectedComponentHash> {
 
 public:
 
-	typedef std::vector<util::point<unsigned int> > pixel_list_type;
+	typedef PixelList                               pixel_list_type;
 	typedef vigra::MultiArray<2, bool>              bitmap_type;
 	typedef pixel_list_type::iterator               iterator;
 	typedef pixel_list_type::const_iterator         const_iterator;
@@ -24,8 +27,8 @@ public:
 			boost::shared_ptr<Image> source,
 			double value,
 			boost::shared_ptr<pixel_list_type> pixelList,
-			unsigned int begin,
-			unsigned int end);
+			pixel_list_type::const_iterator begin,
+			pixel_list_type::const_iterator end);
 
 	/**
 	 * Get the intensity value that was assigned to this component.
@@ -35,7 +38,7 @@ public:
 	/**
 	 * Get a begin and end iterator to the pixels that belong to this component.
 	 */
-	const std::pair<const_iterator, const_iterator> getPixels() const;
+	const std::pair<const_iterator, const_iterator>& getPixels() const;
 
 	/**
 	 * Get the pixel list this component is using.
@@ -116,8 +119,7 @@ private:
 
 	// the range of the pixels in _pixels that belong to this component (can
 	// be all of them, if the pixel lists are not shared)
-	iterator _begin;
-	iterator _end;
+	std::pair<const_iterator, const_iterator> _pixelRange;
 
 	// a binary map of the size of the bounding box to indicate which pixels
 	// belong to this component

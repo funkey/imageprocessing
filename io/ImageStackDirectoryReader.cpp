@@ -18,21 +18,26 @@ ImageStackDirectoryReader::ImageStackDirectoryReader(const std::string& director
 	if (!boost::filesystem::exists(dir))
 		BOOST_THROW_EXCEPTION(IOError() << error_message(_directory + " does not exist"));
 
-	if (!boost::filesystem::is_directory(dir))
-		BOOST_THROW_EXCEPTION(IOError() << error_message(_directory + " is not a directory"));
+	std::vector<boost::filesystem::path> files;
 
-	// get a sorted list of image files
-	std::vector<boost::filesystem::path> sorted;
-	std::copy(
-			boost::filesystem::directory_iterator(dir),
-			boost::filesystem::directory_iterator(),
-			back_inserter(sorted));
-	std::sort(sorted.begin(), sorted.end());
+	if (!boost::filesystem::is_directory(dir)) {
 
-	LOG_DEBUG(imagestackdirectoryreaderlog) << "directory contains " << sorted.size() << " entries" << std::endl;
+		files.push_back(dir);
+
+	} else {
+
+		// get a sorted list of image files
+		std::copy(
+				boost::filesystem::directory_iterator(dir),
+				boost::filesystem::directory_iterator(),
+				back_inserter(files));
+		std::sort(files.begin(), files.end());
+	}
+
+	LOG_DEBUG(imagestackdirectoryreaderlog) << "directory contains " << files.size() << " entries" << std::endl;
 
 	// for every image file in the given directory
-	foreach (boost::filesystem::path file, sorted) {
+	foreach (boost::filesystem::path file, files) {
 
 		if (file.filename() == "META") {
 
@@ -103,4 +108,8 @@ ImageStackDirectoryReader::StackAssembler::updateOutputs() {
 		_stack->add(image);
 
 	_stack->setResolution(_resX, _resY, _resZ);
+	_stack->setBoundingBox(
+			BoundingBox(
+					0, 0, 0,
+					_stack->width()*_resX, _stack->height()*_resY, _images.size()*_resZ));
 }
