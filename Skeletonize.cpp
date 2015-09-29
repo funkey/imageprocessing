@@ -8,6 +8,7 @@
 #include <util/ProgramOptions.h>
 #include <util/Logger.h>
 
+#if defined(USE_PROGRAM_OPTIONS)
 util::ProgramOption optionSkeletonBoundaryWeight(
 		util::_long_name        = "skeletonBoundaryWeight",
 		util::_description_text = "The weight of the boundary term to find the tube's skeletons.",
@@ -39,6 +40,7 @@ util::ProgramOption optionSkeletonExplanationWeight(
 		util::_description_text = "A factor to multiply with the boundary distance to create 'explanation spheres'. "
 		                          "See skeletonSkipExplainedNodes.",
 		util::_default_value    = 1);
+#endif
 
 logger::LogChannel skeletonizelog("skeletonizelog", "[Skeletonize] ");
 
@@ -51,13 +53,32 @@ Skeletonize::Skeletonize(const GraphVolume& graphVolume) :
 			)),
 	_graphVolume(graphVolume),
 	_distanceMap(_graphVolume.graph()),
-	_boundaryWeight(optionSkeletonBoundaryWeight),
+	_dijkstra(_graphVolume.graph(), _distanceMap),
+	_nodeLabels(_graphVolume.graph(), Inside)
+	{ 	
+	#if defined(USE_PROGRAM_OPTIONS)
+	_parameters.boundaryWeight = optionSkeletonBoundaryWeight;
+	_parameters.minSegmentLength = optionSkeletonMinSegmentLength;
+	_parameters.minSegmentLengthRatio = optionSkeletonMinSegmentLengthRatio;
+	_parameters.skipExplainedNodes = optionSkeletonSkipExplainedNodes;
+	_parameters.explanationWeight = optionSkeletonExplanationWeight;
+	_parameters.maxNumSegments = optionSkeletonMaxNumSegments;
+	#endif
+	}
+
+Skeletonize::Skeletonize(const GraphVolume& graphVolume, Parameters user_parameters) :
+ 	_boundaryDistance(
+			vigra::Shape3(
+ 					graphVolume.getDiscreteBoundingBox().width()  + 2,
+ 					graphVolume.getDiscreteBoundingBox().height() + 2,
+ 					graphVolume.getDiscreteBoundingBox().depth()  + 2
+ 			)),
+	_graphVolume(graphVolume),
+	_distanceMap(_graphVolume.graph()),
 	_dijkstra(_graphVolume.graph(), _distanceMap),
 	_nodeLabels(_graphVolume.graph(), Inside),
-	_minSegmentLength(optionSkeletonMinSegmentLength),
-	_minSegmentLengthRatio(optionSkeletonMinSegmentLengthRatio),
-	_skipExplainedNodes(optionSkeletonSkipExplainedNodes),
-	_explanationWeight(optionSkeletonExplanationWeight) {}
+	_parameters(user_parameters) {}
+
 
 Skeleton
 Skeletonize::getSkeleton() {
@@ -70,10 +91,9 @@ Skeletonize::getSkeleton() {
 
 	findRoot();
 
-	int maxNumSegments = optionSkeletonMaxNumSegments;
-	int segmentsFound = 0;
-	while (extractLongestSegment() && ++segmentsFound < maxNumSegments) {}
-
+ 	for (int i = 0; i < _parameters.maxNumSegments; ++i) {
+ 		if (!extractLongestSegment()) break;
+	}
 	return parseVolumeSkeleton();
 }
 
@@ -215,7 +235,7 @@ Skeletonize::extractLongestSegment() {
 	float maxValue = -1;
 	for (GraphVolume::Node n : _boundary) {
 
-		if (_skipExplainedNodes && _nodeLabels[n] == Explained)
+		if (_parameters.skipExplainedNodes && _nodeLabels[n] == Explained)
 			continue;
 
 		if (_dijkstra.distMap()[n] > maxValue) {
@@ -226,7 +246,7 @@ Skeletonize::extractLongestSegment() {
 	}
 
 	// no more points or length smaller then min segment length
-	if (maxValue == -1 || maxValue < _minSegmentLength)
+	if (maxValue == -1 || maxValue < _parameters.minSegmentLength)
 		return false;
 
 	LOG_DEBUG(skeletonizelog) << "extracting segment with length " << maxValue << std::endl;
@@ -238,7 +258,7 @@ Skeletonize::extractLongestSegment() {
 
 		_nodeLabels[n] = OnSkeleton;
 
-		if (_skipExplainedNodes)
+		if (_parameters.skipExplainedNodes)
 			drawExplanationSphere(_graphVolume.positions()[n]);
 
 		GraphVolume::Edge pred = _dijkstra.predMap()[n];
@@ -255,9 +275,9 @@ Skeletonize::extractLongestSegment() {
 
 		LOG_DEBUG(skeletonizelog) << "longest segment has length " << maxValue << std::endl;
 
-		_minSegmentLength = std::max(_minSegmentLength, _minSegmentLengthRatio*maxValue);
+		_parameters.minSegmentLength = std::max(_parameters.minSegmentLength, 					_parameters.minSegmentLengthRatio*maxValue);
 
-		LOG_DEBUG(skeletonizelog) << "setting min segment length to " << _minSegmentLength << std::endl;
+		LOG_DEBUG(skeletonizelog) << "setting min segment length to " << _parameters.minSegmentLength << 			std::endl;
 	}
 
 	return true;
@@ -266,7 +286,7 @@ Skeletonize::extractLongestSegment() {
 void
 Skeletonize::drawExplanationSphere(const Position& center) {
 
-	double radius2 = boundaryDistance(center)*pow(_explanationWeight, 2);
+	double radius2 = boundaryDistance(center)*pow(_parameters.explanationWeight, 2);
 
 	double resX2 = pow(_graphVolume.getResolutionX(), 2);
 	double resY2 = pow(_graphVolume.getResolutionY(), 2);
@@ -276,10 +296,9 @@ Skeletonize::drawExplanationSphere(const Position& center) {
 
 		const Position& pos = _graphVolume.positions()[n];
 		double distance2 =
-				resX2*pow(pos[0] - center[0], 2) +
-				resY2*pow(pos[1] - center[1], 2) +
-				resZ2*pow(pos[2] - center[2], 2);
-
+ 				resX2*pow(static_cast<double>(pos[0]) - static_cast<double>(center[0]), 2) +
+ 				resY2*pow(static_cast<double>(pos[1]) - static_cast<double>(center[1]), 2) +
+ 				resZ2*pow(static_cast<double>(pos[2]) - static_cast<double>(center[2]), 2);
 		if (distance2 <= radius2)
 			if (_nodeLabels[n] != OnSkeleton)
 				_nodeLabels[n] = Explained;
@@ -294,7 +313,7 @@ Skeletonize::boundaryPenalty(double boundaryDistance) {
 	//   w     : boundary weight
 	//   bd    : boundary distance
 	//   max_bd: max boundary distance
-	return _boundaryWeight*(1.0 - sqrt(boundaryDistance/_maxBoundaryDistance2));
+	return _parameters.boundaryWeight*(1.0 - sqrt(boundaryDistance/_maxBoundaryDistance2));
 }
 
 Skeleton
