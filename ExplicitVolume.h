@@ -1,6 +1,7 @@
 #ifndef IMAGEPROCESSING_EXPLICIT_VOLUME_H__
 #define IMAGEPROCESSING_EXPLICIT_VOLUME_H__
 
+#include <cmath>
 #include <vigra/multi_array.hxx>
 #include <vigra/functorexpression.hxx>
 #include <imageprocessing/Image.h>
@@ -130,6 +131,54 @@ public:
 					data(),
 					data(),
 					(Arg1() + Param(shift))/Param(max));
+	}
+
+	/**
+	 * Cut a subvolume of this ExplicitVolume<ValueType>.
+	 *
+	 * @param boundingBox
+	 *              The bounding box of the requested subvolume. The target gets 
+	 *              resized to be at least that large, but might be larger to 
+	 *              fit all the voxels that are intersecting the requested 
+	 *              subvolume.
+	 * @param target
+	 *              An explicit volume to fill.
+	 */
+	void cut(const util::box<float, 3>& boundingBox, ExplicitVolume<ValueType>& target) {
+
+		util::box<float, 3> intersection = boundingBox.intersection(getBoundingBox());
+
+		if (intersection.isZero()) {
+
+			target = ExplicitVolume<ValueType>();
+			return;
+		}
+
+		// the discrete offset of the requested region in this volume
+		util::point<unsigned int, 3> offset =
+				(intersection.min() - getBoundingBox().min())/
+				getResolution();
+
+		// the discrete size of the requested region
+		util::point<unsigned int, 3> size(
+				std::ceil(intersection.width() /getResolution().x()),
+				std::ceil(intersection.height()/getResolution().y()),
+				std::ceil(intersection.depth() /getResolution().z()));
+
+		target = ExplicitVolume<ValueType>(size.x(), size.y(), size.z());
+		target.setResolution(getResolution());
+		target.setOffset(getOffset() + offset*getResolution());
+
+		typedef typename data_type::difference_type Shape;
+		target.data() = data().subarray(
+				Shape(
+						offset.x(),
+						offset.y(),
+						offset.z()),
+				Shape(
+						offset.x() + size.x(),
+						offset.y() + size.y(),
+						offset.z() + size.z()));
 	}
 
 protected:
