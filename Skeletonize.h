@@ -3,10 +3,21 @@
 
 #include <imageprocessing/ExplicitVolume.h>
 #define WITH_LEMON
+#define USE_PROGRAM_OPTIONS
 #include <lemon/dijkstra.h>
 #include "Skeleton.h"
 
 class NoNodeFound : public Exception {};
+
+struct Parameters {
+	double minSegmentLength = 0;
+	double minSegmentLengthRatio = 1;
+	bool   skipExplainedNodes = 1;
+	double explanationWeight = 1;
+	double boundaryWeight = 1;
+	int maxNumSegments = 10; 
+	};
+
 
 class Skeletonize {
 
@@ -21,6 +32,7 @@ public:
 	 * be labelled with 1, background with 0.
 	 */
 	Skeletonize(const GraphVolume& graph);
+	Skeletonize(const GraphVolume& graphVolume, Parameters user_parameters);
 
 	/**
 	 * Extract the skeleton from the given volume.
@@ -116,8 +128,6 @@ private:
 	const GraphVolume& _graphVolume;
 	DistanceMap _distanceMap;
 
-	double _boundaryWeight;
-
 	lemon::Dijkstra<GraphVolume::Graph, DistanceMap> _dijkstra;
 
 	GraphVolume::Graph::Node _root;
@@ -126,14 +136,10 @@ private:
 	GraphVolume::Graph::NodeMap<NodeLabel> _nodeLabels;
 
 	std::vector<GraphVolume::Graph::Node> _boundary;
-
+	
+	Parameters _parameters;
 	float _maxBoundaryDistance2;
 
-	double _minSegmentLength;
-	double _minSegmentLengthRatio;
-
-	bool   _skipExplainedNodes;
-	double _explanationWeight;
 };
 
 #endif // IMAGEPROCESSING_TUBES_SKELETONIZE_H__
