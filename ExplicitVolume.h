@@ -134,6 +134,21 @@ public:
 	}
 
 	/**
+	 * Reverse the order of the axises.
+	 */
+	void transpose() {
+
+		_data = _data.transpose();
+
+		auto res = getResolution();
+		auto off = getOffset();
+
+		setResolution(res.z(), res.y(), res.x());
+		setOffset(off.z(), off.y(), off.x());
+		setBoundingBoxDirty();
+	}
+
+	/**
 	 * Cut a subvolume of this ExplicitVolume<ValueType>.
 	 *
 	 * @param boundingBox
