@@ -48,6 +48,8 @@ public:
 
 	bool contains(unsigned int id) const { return _skeletons.count(id); }
 
+	std::size_t size() const { return _skeletons.size(); }
+
 protected:
 
 	util::box<float,3> computeBoundingBox() const override {
