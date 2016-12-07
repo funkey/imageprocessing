@@ -5,7 +5,7 @@
 
 #include <pipeline/Data.h>
 
-typedef vigra::MultiArray<2, float> array_type;
+typedef vigra::MultiArray<2, size_t> array_type;
 
 /**
  * A vigra-compatible image class.
@@ -16,7 +16,7 @@ public:
 
 	Image(std::string identifier = std::string()) : _identifier(identifier) {};
 
-	Image(size_t width, size_t height, float initialValue = 0.0f, std::string identifier = std::string()) :
+	Image(size_t width, size_t height, size_t initialValue = 0, std::string identifier = std::string()) :
 		array_type(array_type::difference_type(width, height)),
 		_identifier(identifier) {
 
