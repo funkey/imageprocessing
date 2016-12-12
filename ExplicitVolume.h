@@ -4,8 +4,29 @@
 #include <cmath>
 #include <vigra/multi_array.hxx>
 #include <vigra/functorexpression.hxx>
+
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#include <numpy/arrayobject.h>
+
 #include <imageprocessing/Image.h>
+#include <util/exceptions.h>
+#include <util/typename.h>
 #include "DiscreteVolume.h"
+
+template <typename T>
+struct numpy_type_traits {};
+
+template <>
+struct numpy_type_traits<int> {
+
+	static char getNumpyType() { return NPY_INT32; }
+};
+
+template <>
+struct numpy_type_traits<float> {
+
+	static char getNumpyType() { return NPY_FLOAT32; }
+};
 
 /**
  * Explicit representation of a discrete volume as a vigra multi-array.
@@ -207,6 +228,42 @@ private:
 
 	data_type _data;
 };
+
+template <typename ValueType>
+ExplicitVolume<ValueType>
+volumeFromNumpyArray(PyObject* a) {
+
+	PyArrayObject* array = (PyArrayObject*)PyArray_FromAny(
+			a,
+			PyArray_DescrFromType(numpy_type_traits<ValueType>::getNumpyType()),
+			0, 0, // min and max dimension, we check that later
+			0,    // requirements
+			0);
+
+	if (array == NULL)
+		UTIL_THROW_EXCEPTION(
+				UsageError,
+				"given numpy array is not of type " << typeName(ValueType()));
+
+	int dims = PyArray_NDIM(array);
+	if (dims != 3)
+		UTIL_THROW_EXCEPTION(
+				UsageError,
+				"only arrays of dimensions 3 are supported.");
+
+	size_t d = PyArray_DIM(array, 0);
+	size_t h = PyArray_DIM(array, 1);
+	size_t w = PyArray_DIM(array, 2);
+
+	auto volume = ExplicitVolume<ValueType>(w, h, d);
+
+	for (size_t z = 0; z < d; z++)
+	for (size_t y = 0; y < h; y++)
+	for (size_t x = 0; x < w; x++)
+		volume(x,y,z) = *static_cast<ValueType*>(PyArray_GETPTR3(array, z, y, x));
+
+	return volume;
+}
 
 #endif // IMAGEPROCESSING_EXPLICIT_VOLUME_H__
 
