@@ -359,9 +359,9 @@ Skeletonize::traverse(const GraphVolume::Node& root, Skeleton& skeleton) {
 		const Position pos = _graphVolume.positions()[n];
 		const float boundDist = sqrt(boundaryDistance(pos));
 		if (isOpeningNode) {
-			skeleton.openSegment(pos, boundDist);
+			skeleton.openSegment(pos, 2*boundDist);
 		} else {
-			skeleton.extendSegment(pos, boundDist);
+			skeleton.extendSegment(pos, 2*boundDist);
 		}
 
 		// Iterate through neighbors and put unseen ones onto traversal stack.  The
