@@ -5,6 +5,7 @@
 #define WITH_LEMON
 #define USE_PROGRAM_OPTIONS
 #include <lemon/dijkstra.h>
+#include <util/exceptions.h>
 #include "Skeleton.h"
 
 class NoNodeFound : public Exception {};

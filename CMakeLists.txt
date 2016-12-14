@@ -1,5 +1,1 @@
-file(GLOB imageprocessing_files "*.cpp")
-file(GLOB io_files "io/*.cpp")
-file(GLOB dgc_files "external/dgc/*.cpp")
-set(source_files ${imageprocessing_files} ${io_files} ${dgc_files})
-define_module(imageprocessing OBJECT SOURCES ${source_files} LINKS util signals pipeline vigra-git lemon-hg boost INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/..)
+define_module(imageprocessing OBJECT LINKS util vigra lemon-hg boost numpy? INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/..)
