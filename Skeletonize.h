@@ -10,15 +10,6 @@
 
 class NoNodeFound : public Exception {};
 
-struct Parameters {
-	double minSegmentLength = 0;
-	double minSegmentLengthRatio = 1;
-	bool   skipExplainedNodes = 1;
-	double explanationWeight = 1;
-	double boundaryWeight = 1;
-	int maxNumSegments = 10; 
-	};
-
 
 class Skeletonize {
 
@@ -27,6 +18,16 @@ class Skeletonize {
 	typedef GraphVolume::Graph::EdgeMap<double> DistanceMap;
 
 public:
+
+	struct Parameters {
+
+		double minSegmentLength = 0;
+		double minSegmentLengthRatio = 1;
+		bool   skipExplainedNodes = 1;
+		double explanationWeight = 1;
+		double boundaryWeight = 1;
+		int maxNumSegments = 10;
+	};
 
 	/**
 	 * Create a skeletonizer for the given volume. Inside voxels are assumed to 
