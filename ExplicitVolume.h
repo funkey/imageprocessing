@@ -5,6 +5,7 @@
 #include <vigra/multi_array.hxx>
 #include <vigra/functorexpression.hxx>
 
+#include <config.h>
 #ifdef HAVE_NUMPY
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
@@ -236,9 +237,10 @@ template <typename ValueType>
 ExplicitVolume<ValueType>
 volumeFromNumpyArray(PyObject* a) {
 
+	PyArray_Descr* desc = PyArray_DescrFromType(numpy_type_traits<ValueType>::getNumpyType());
 	PyArrayObject* array = (PyArrayObject*)PyArray_FromAny(
 			a,
-			PyArray_DescrFromType(numpy_type_traits<ValueType>::getNumpyType()),
+			desc,
 			0, 0, // min and max dimension, we check that later
 			0,    // requirements
 			0);
