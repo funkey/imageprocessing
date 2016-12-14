@@ -5,8 +5,10 @@
 #include <vigra/multi_array.hxx>
 #include <vigra/functorexpression.hxx>
 
+#ifdef HAVE_NUMPY
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
+#endif
 
 #include <imageprocessing/Image.h>
 #include <util/exceptions.h>
@@ -229,6 +231,7 @@ private:
 	data_type _data;
 };
 
+#ifdef HAVE_NUMPY
 template <typename ValueType>
 ExplicitVolume<ValueType>
 volumeFromNumpyArray(PyObject* a) {
@@ -264,6 +267,7 @@ volumeFromNumpyArray(PyObject* a) {
 
 	return volume;
 }
+#endif
 
 #endif // IMAGEPROCESSING_EXPLICIT_VOLUME_H__
 
