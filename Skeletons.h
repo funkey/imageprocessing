@@ -19,6 +19,9 @@ public:
 
 	void remove(unsigned int id) {
 
+		if (!contains(id))
+			return;
+
 		_skeletons.erase(id);
 		_colors.erase(id);
 		_ids.erase(std::find(_ids.begin(), _ids.end(), id));
