@@ -1,13 +1,14 @@
 #ifndef IMAGEPROCESSING_IMAGE_STACK_H__
 #define IMAGEPROCESSING_IMAGE_STACK_H__
 
+#include <memory>
 #include "Image.h"
 #include "DiscreteVolume.h"
 
 class ImageStack : public DiscreteVolume {
 
 	// Image objects are shared between ImageStack
-	typedef std::vector<boost::shared_ptr<Image> > sections_type;
+	typedef std::vector<std::shared_ptr<Image> > sections_type;
 
 public:
 
@@ -25,12 +26,12 @@ public:
 	/**
 	 * Add a single section to this set of sections.
 	 */
-	void add(boost::shared_ptr<Image> section);
+	void add(std::shared_ptr<Image> section);
 
 	/**
 	 * Add a set of sections to this set of sections.
 	 */
-	void addAll(boost::shared_ptr<ImageStack> stack);
+	void addAll(std::shared_ptr<ImageStack> stack);
 
 	const const_iterator begin() const { return _sections.begin(); }
 
@@ -40,9 +41,9 @@ public:
 
 	iterator end() { return _sections.end(); }
 
-	boost::shared_ptr<Image> operator[](unsigned int i) { return _sections[i]; }
+	std::shared_ptr<Image> operator[](unsigned int i) { return _sections[i]; }
 
-	boost::shared_ptr<const Image> operator[](unsigned int i) const { return _sections[i]; }
+	std::shared_ptr<const Image> operator[](unsigned int i) const { return _sections[i]; }
 
 	unsigned int size() const { return _sections.size(); }
 
