@@ -3,14 +3,12 @@
 
 #include <vigra/multi_array.hxx>
 
-#include <pipeline/Data.h>
-
 typedef vigra::MultiArray<2, size_t> array_type;
 
 /**
  * A vigra-compatible image class.
  */
-class Image : public pipeline::Data, public array_type {
+class Image : public array_type {
 
 public:
 
