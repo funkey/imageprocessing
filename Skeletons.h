@@ -8,7 +8,7 @@ class Skeletons : public Volume {
 
 public:
 
-	void add(unsigned int id, std::shared_ptr<Skeleton> skeleton, int color = -1) {
+	void add(uint64_t id, std::shared_ptr<Skeleton> skeleton, int color = -1) {
 
 		_skeletons[id] = skeleton;
 		_colors[id] = (color < 0 ? id : color);
@@ -17,7 +17,7 @@ public:
 		setBoundingBoxDirty();
 	}
 
-	void remove(unsigned int id) {
+	void remove(uint64_t id) {
 
 		if (!contains(id))
 			return;
@@ -29,7 +29,7 @@ public:
 		setBoundingBoxDirty();
 	}
 
-	std::shared_ptr<Skeleton> get(unsigned int id) {
+	std::shared_ptr<Skeleton> get(uint64_t id) {
 
 		if (_skeletons.count(id))
 			return _skeletons[id];
@@ -37,19 +37,19 @@ public:
 		return std::shared_ptr<Skeleton>();
 	}
 
-	int getColor(unsigned int id) {
+	int getColor(uint64_t id) {
 
 		return _colors[id];
 	}
 
-	const std::vector<unsigned int>& getSkeletonIds() const {
+	const std::vector<uint64_t>& getSkeletonIds() const {
 
 		return _ids;
 	}
 
 	void clear() { _skeletons.clear(); _colors.clear(); _ids.clear(); setBoundingBoxDirty(); }
 
-	bool contains(unsigned int id) const { return _skeletons.count(id); }
+	bool contains(uint64_t id) const { return _skeletons.count(id); }
 
 	std::size_t size() const { return _skeletons.size(); }
 
@@ -65,10 +65,10 @@ protected:
 		return bb;
 	}
 
-	std::map<unsigned int, std::shared_ptr<Skeleton> > _skeletons;
-	std::map<unsigned int, int >                       _colors;
+	std::map<uint64_t, std::shared_ptr<Skeleton> > _skeletons;
+	std::map<uint64_t, int >                       _colors;
 
-	std::vector<unsigned int> _ids;
+	std::vector<uint64_t> _ids;
 };
 
 #endif // IMAGEPROCESSING_SKELETONS_H__
